@@ -11,18 +11,19 @@
 class CPU {
 
     // Registers
-    uint8_t A;
-    uint16_t BC;
-    uint16_t DE;
-    uint16_t HL;
-    uint16_t pc;
-    uint16_t sp;
+    uint8_t A = 0;
+    uint16_t BC = 0;
+    uint16_t DE = 0;
+    uint16_t HL = 0;
+    uint16_t pc = 0;
+    uint16_t sp = 0;
 
     // Flags
-    bool Z; // Zero Flag becomes set (true) if the result of an operation has been zero
-    bool N; // Add/Sub Flag: indicates whether the previous instruction has been an addition or subtraction
-    bool H; // Half Carry Flag: carry for lower 4bits of the result
-    bool C; // Carry Flag
+    bool Z = false; // Zero Flag becomes set (true) if the result of an operation has been zero
+    bool N = false; // Add/Sub Flag: indicates whether the previous instruction has been an addition or subtraction
+    bool H = false; // Half Carry Flag: carry for lower 4bits of the result
+    bool C = false; // Carry Flag
+
 };
 
 
