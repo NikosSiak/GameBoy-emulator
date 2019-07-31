@@ -23,11 +23,20 @@
 
 class Memory {
 
-    uint8_t ram[0xFFFF];
+//    uint8_t bios;
+    uint8_t *cart_rom;              // cartridge rom
+    uint8_t work_ram[16 * 1024];    // 16KBytes work ram
+    // TODO: external ram
+    uint8_t vram[8 * 1024];
+    uint8_t oam[160];
+    uint8_t io_registers[128];
+    uint8_t hram[127];
+    uint8_t interrupt_register;
 
 public:
     Memory();
-
+    ~Memory();
+    void loadGame(const char *romPath);
 };
 
 
