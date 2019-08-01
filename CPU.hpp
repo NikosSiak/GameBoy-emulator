@@ -10,20 +10,22 @@
 
 class CPU {
 
-    // Registers
-    uint8_t A = 0;
-    uint16_t BC = 0;
-    uint16_t DE = 0;
-    uint16_t HL = 0;
+    // Registers (values from Power Up Sequence http://bgb.bircd.org/pandocs.htm#powerupsequence)
+    uint8_t A = 0x01;
+    uint16_t BC = 0x0013;
+    uint16_t DE = 0x00D8;
+    uint16_t HL = 0x014D;
     uint16_t pc = 0;
-    uint16_t sp = 0;
+    uint16_t sp = 0xFFFE;
 
     // Flags
-    bool Z = false; // Zero Flag becomes set (true) if the result of an operation has been zero
+    bool Z = true; // Zero Flag becomes set (true) if the result of an operation has been zero
     bool N = false; // Add/Sub Flag: indicates whether the previous instruction has been an addition or subtraction
-    bool H = false; // Half Carry Flag: carry for lower 4bits of the result
-    bool C = false; // Carry Flag
+    bool H = true; // Half Carry Flag: carry for lower 4bits of the result
+    bool C = true; // Carry Flag
 
+public:
+    int emulateInstruction(); // returns number of cycles needed for the instruction
 };
 
 
