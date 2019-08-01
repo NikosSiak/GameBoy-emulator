@@ -25,6 +25,8 @@ class CPU {
     bool C = true; // Carry Flag
 
 public:
+    uint8_t readFromMemory();
+    int8_t signed8(uint8_t num);
     int emulateInstruction(); // returns number of cycles needed for the instruction
 };
 
