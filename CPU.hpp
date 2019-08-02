@@ -19,14 +19,15 @@ class CPU {
     uint16_t sp = 0xFFFE;
 
     // Flags
-    bool Z = true; // Zero Flag becomes set (true) if the result of an operation has been zero
+    bool Z = true;  // Zero Flag becomes set (true) if the result of an operation has been zero
     bool N = false; // Add/Sub Flag: indicates whether the previous instruction has been an addition or subtraction
-    bool H = true; // Half Carry Flag: carry for lower 4bits of the result
-    bool C = true; // Carry Flag
+    bool H = true;  // Half Carry Flag: carry for lower 4bits of the result
+    bool C = true;  // Carry Flag
 
 public:
-    uint8_t readFromMemory();
-    int8_t signed8(uint8_t num);
+    uint8_t readByteFromMemory(uint16_t address);
+    void writeByteToMemory(uint16_t address, uint8_t value);
+    void enableInterruptRegister();
     int emulateInstruction(); // returns number of cycles needed for the instruction
 };
 
