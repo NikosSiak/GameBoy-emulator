@@ -23,7 +23,7 @@
 
 class Memory {
 
-//    uint8_t bios;
+    uint8_t bios[256];
     uint8_t *cart_rom;              // cartridge rom
     uint8_t work_ram[16 * 1024];    // 16KBytes work ram
     // TODO: external ram
@@ -31,7 +31,7 @@ class Memory {
     uint8_t oam[160];
     uint8_t io_registers[128];
     uint8_t hram[127];
-    uint8_t interrupt_register;
+    bool interrupt_register;
 
 public:
     Memory();
