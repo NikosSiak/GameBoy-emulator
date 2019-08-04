@@ -21,7 +21,7 @@ uint8_t CPU::getF() {   // Return a unsigned 8 bit int which represents the F re
     return regF;
 }
 
-uint8_t CPU::setF(uint8_t value) {
+void CPU::setF(uint8_t value) {
     FZ = ((value >> 7) & 0x01) == 1;    // If the most significant bit is 1 fz = true else false
     FN = ((value >> 6) & 0x01) == 1;    // If the second most significant bit is 1 fn = true else false
     FH = ((value >> 5) & 0x01) == 1;    // If the third most significant bit is 1 fn = true else false
