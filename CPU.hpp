@@ -29,6 +29,8 @@ class CPU {
     bool FC = true;  // Carry Flag
 
 public:
+    uint8_t getF();
+    uint8_t setF(uint8_t value);
     uint16_t getBC();
     void setBC(uint16_t value);
     uint16_t getDE();

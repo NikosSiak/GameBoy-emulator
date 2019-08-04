@@ -4,6 +4,30 @@
 
 #include "CPU.hpp"
 
+uint8_t CPU::getF() {   // Return a unsigned 8 bit int which represents the F register
+    uint8_t regF = 0x00;    // F register: FZ FN FH FC 0 0 0 0
+    if (FC) {
+        regF += 16;     // 2 ^ 4 (4th bit of register)
+    }
+    if (FH) {
+        regF += 32;     // 2 ^ 5 (5th bit of register)
+    }
+    if (FN) {
+        regF += 64;     // 2 ^ 6 (6th bit of register)
+    }
+    if (FZ) {
+        regF += 128;    // 2 ^ 7 (7th bit of register)
+    }
+    return regF;
+}
+
+uint8_t CPU::setF(uint8_t value) {
+    FZ = ((value >> 7) & 0x01) == 1;    // If the most significant bit is 1 fz = true else false
+    FN = ((value >> 6) & 0x01) == 1;    // If the second most significant bit is 1 fn = true else false
+    FH = ((value >> 5) & 0x01) == 1;    // If the third most significant bit is 1 fn = true else false
+    FC = ((value >> 4) & 0x01) == 1;    // If the fourth most significant bit is 1 fn = true else false
+}
+
 uint16_t CPU::getBC() {
     return (B << 8) | C;
 }
@@ -416,12 +440,12 @@ int CPU::emulateInstruction() { // returns number of cycles needed for the instr
             sp = getHL();
             return 8;
         }
-        case 0xF8: {    // LD HL, SP + n. Load SP + n to HL. n = unsigned int 8 bit
-            uint8_t n = readByteFromMemory(pc++);
+        case 0xF8: {    // LD HL, SP + n. Load SP + n to HL. n = signed int 8 bit
+            int8_t n = static_cast<int8_t>(readByteFromMemory(pc++));
             setHL(sp + n);
             FZ = false;
             FN = false;
-            FH = n > 0xF - (sp & 0x000F);
+            FH = (n & 0x0F) > 0xF - (sp & 0x000F);
             FC = n > 0xFFFF - sp;
             return 12;
         }
@@ -433,7 +457,47 @@ int CPU::emulateInstruction() { // returns number of cycles needed for the instr
             writeByteToMemory(nn + 1, pc & 0x00FF);
             return 20;
         }
-
+        case 0xF5: {    // PUSH AF: Write AF to stack
+            writeByteToMemory(--sp, A);
+            writeByteToMemory(--sp, getF());
+            return 16;
+        }
+        case 0xC5: {    // PUSH BC: Write BC to stack
+            writeByteToMemory(--sp, B);
+            writeByteToMemory(--sp, C);
+            return 16;
+        }
+        case 0xD5: {    // PUSH DE: Write DE to stack
+            writeByteToMemory(--sp, D);
+            writeByteToMemory(--sp, E);
+            return 16;
+        }
+        case 0xE5: {    // PUSH HL: Write HL to stack
+            writeByteToMemory(--sp, H);
+            writeByteToMemory(--sp, L);
+            return 16;
+        }
+        case 0xF1: {    // POP AF: Load AF from stack
+            uint8_t regF = readByteFromMemory(sp++);
+            setF(regF);
+            A = readByteFromMemory(sp++);
+            return 12;
+        }
+        case 0xC1: {    // POP BC: Load BC from stack
+            C = readByteFromMemory(sp++);
+            B = readByteFromMemory(sp++);
+            return 12;
+        }
+        case 0xD1: {    // POP DE: Load DE from stack
+            E = readByteFromMemory(sp++);
+            D = readByteFromMemory(sp++);
+            return 12;
+        }
+        case 0xE1: {    // POP HL: Load HL from stack
+            L = readByteFromMemory(sp++);
+            H = readByteFromMemory(sp++);
+            return 12;
+        }
         case 0xC3: {    // JP nn: Jump to the absolute address specified by the operand nn. nn = unsigned int 16 bit. LSB first
             uint8_t lsb = readByteFromMemory(pc++);
             uint8_t msb = readByteFromMemory(pc++);
@@ -519,49 +583,49 @@ int CPU::emulateInstruction() { // returns number of cycles needed for the instr
             }
             return 16;
         }
-        case 0xC7: {    // RST 0x00: Puh pc tp stack and jump to address 0x0000
+        case 0xC7: {    // RST 0x00: Puh pc to stack and jump to address 0x0000
             writeByteToMemory(--sp, pc >> 8);       // write msb of pc to stack
             writeByteToMemory(--sp, pc & 0x00FF);   // write lsb of pc to stack
             pc = 0x0000;
             return 16;
         }
-        case 0xCF: {    // RST 0x08: Puh pc tp stack and jump to address 0x0008
+        case 0xCF: {    // RST 0x08: Puh pc to stack and jump to address 0x0008
             writeByteToMemory(--sp, pc >> 8);       // write msb of pc to stack
             writeByteToMemory(--sp, pc & 0x00FF);   // write lsb of pc to stack
             pc = 0x0008;
             return 16;
         }
-        case 0xD7: {    // RST 0x10: Puh pc tp stack and jump to address 0x0010
+        case 0xD7: {    // RST 0x10: Puh pc to stack and jump to address 0x0010
             writeByteToMemory(--sp, pc >> 8);       // write msb of pc to stack
             writeByteToMemory(--sp, pc & 0x00FF);   // write lsb of pc to stack
             pc = 0x0010;
             return 16;
         }
-        case 0xDF: {    // RST 0x18: Puh pc tp stack and jump to address 0x0018
+        case 0xDF: {    // RST 0x18: Puh pc to stack and jump to address 0x0018
             writeByteToMemory(--sp, pc >> 8);       // write msb of pc to stack
             writeByteToMemory(--sp, pc & 0x00FF);   // write lsb of pc to stack
             pc = 0x0018;
             return 16;
         }
-        case 0xE7: {    // RST 0x20: Puh pc tp stack and jump to address 0x0020
+        case 0xE7: {    // RST 0x20: Puh pc to stack and jump to address 0x0020
             writeByteToMemory(--sp, pc >> 8);       // write msb of pc to stack
             writeByteToMemory(--sp, pc & 0x00FF);   // write lsb of pc to stack
             pc = 0x0020;
             return 16;
         }
-        case 0xEF: {    // RST 0x28: Puh pc tp stack and jump to address 0x0028
+        case 0xEF: {    // RST 0x28: Puh pc to stack and jump to address 0x0028
             writeByteToMemory(--sp, pc >> 8);       // write msb of pc to stack
             writeByteToMemory(--sp, pc & 0x00FF);   // write lsb of pc to stack
             pc = 0x0028;
             return 16;
         }
-        case 0xF7: {    // RST 0x30: Puh pc tp stack and jump to address 0x0030
+        case 0xF7: {    // RST 0x30: Puh pc to stack and jump to address 0x0030
             writeByteToMemory(--sp, pc >> 8);       // write msb of pc to stack
             writeByteToMemory(--sp, pc & 0x00FF);   // write lsb of pc to stack
             pc = 0x0030;
             return 16;
         }
-        case 0xFF: {    // RST 0x38: Puh pc tp stack and jump to address 0x0038
+        case 0xFF: {    // RST 0x38: Puh pc to stack and jump to address 0x0038
             writeByteToMemory(--sp, pc >> 8);       // write msb of pc to stack
             writeByteToMemory(--sp, pc & 0x00FF);   // write lsb of pc to stack
             pc = 0x0038;
