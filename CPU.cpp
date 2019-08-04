@@ -382,6 +382,58 @@ int CPU::emulateInstruction() { // returns number of cycles needed for the instr
             setHL(getHL() - 1);
             return 8;
         }
+        case 0xE0: {    // LD (0xFF00 + n), A: Write A to memory[0xFF00 + n]. n = unsigned int 8 bit
+            uint8_t n = readByteFromMemory(pc++);
+            writeByteToMemory(0xFF00 + n, A);
+            return 12;
+        }
+        case 0xF0: {    // LD A, (0xFF00 + n): Load memory[0xFF00 + n] to A. n = unsigned int 8 bit
+            uint8_t n = readByteFromMemory(pc++);
+            A = readByteFromMemory(0xFF00 + n);
+        }
+        case 0x01: {    // LD BC, nn: Load nn to BC. nn = unsigned int 16 bit. LSB first
+            C = readByteFromMemory(pc++);
+            B = readByteFromMemory(pc++);
+            return 12;
+        }
+        case 0x11: {    // LD DE, nn: Load nn to DE. nn = unsigned int 16 bit. LSB first
+            E = readByteFromMemory(pc++);
+            D = readByteFromMemory(pc++);
+            return 12;
+        }
+        case 0x21: {    // LD HL, nn: Load nn to HL. nn = unsigned int 16 bit. LSB first
+            L = readByteFromMemory(pc++);
+            H = readByteFromMemory(pc++);
+            return 12;
+        }
+        case 0x31: {    // LD SP, nn: Load nn to SP. nn = unsigned int 16 bit. LSB first
+            uint8_t lsb = readByteFromMemory(pc++);
+            uint8_t msb = readByteFromMemory(pc++);
+            sp = (msb << 8) | lsb;
+            return 12;
+        }
+        case 0xF9: {    // LD SP, HL: Load HL to SP
+            sp = getHL();
+            return 8;
+        }
+        case 0xF8: {    // LD HL, SP + n. Load SP + n to HL. n = unsigned int 8 bit
+            uint8_t n = readByteFromMemory(pc++);
+            setHL(sp + n);
+            FZ = false;
+            FN = false;
+            FH = n > 0xF - (sp & 0x000F);
+            FC = n > 0xFFFF - sp;
+            return 12;
+        }
+        case 0x08: {    // LD (nn), SP: Write SP to memory[nn]. nn = unsigned int 16 bit. LSB first
+            uint8_t lsb = readByteFromMemory(pc++);
+            uint8_t msb = readByteFromMemory(pc++);
+            uint16_t nn = (msb << 8) | lsb;
+            writeByteToMemory(nn, sp >> 8);
+            writeByteToMemory(nn + 1, pc & 0x00FF);
+            return 20;
+        }
+
         case 0xC3: {    // JP nn: Jump to the absolute address specified by the operand nn. nn = unsigned int 16 bit. LSB first
             uint8_t lsb = readByteFromMemory(pc++);
             uint8_t msb = readByteFromMemory(pc++);
