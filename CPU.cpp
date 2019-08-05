@@ -67,7 +67,23 @@ void CPU::enableInterruptRegister() {
     // TODO
 }
 
-int CPU::emulateInstruction() { // returns number of cycles needed for the instruction
+void CPU::addInstruction(uint8_t target) {      // source register is always A
+    FH = (target & 0x0F) > 0xF - (A & 0x0F);
+    FC = target > 0xFF - A;
+    A += target;
+    FZ = A == 0;
+    FN = false;
+}
+
+void CPU::subInstruction(uint8_t target) {      // source register is always A
+    FH = (target & 0x0F) > (A & 0x0F);
+    FC = target > A;
+    A -= target;
+    FZ = A == 0;
+    FN = true;
+}
+
+int CPU::emulateInstruction() {     // returns number of cycles needed for the instruction
 
     uint8_t opcode = readByteFromMemory(pc++);
 
@@ -478,8 +494,7 @@ int CPU::emulateInstruction() { // returns number of cycles needed for the instr
             return 16;
         }
         case 0xF1: {    // POP AF: Load AF from stack
-            uint8_t regF = readByteFromMemory(sp++);
-            setF(regF);
+            setF(readByteFromMemory(sp++));
             A = readByteFromMemory(sp++);
             return 12;
         }
@@ -497,6 +512,158 @@ int CPU::emulateInstruction() { // returns number of cycles needed for the instr
             L = readByteFromMemory(sp++);
             H = readByteFromMemory(sp++);
             return 12;
+        }
+        case 0x87: {    // ADD A, A: Adds A to A
+            addInstruction(A);
+            return 4;
+        }
+        case 0x80: {    // ADD A, B: Adds B to A
+            addInstruction(B);
+            return 4;
+        }
+        case 0x81: {    // ADD A, C: Adds C to A
+            addInstruction(C);
+            return 4;
+        }
+        case 0x82: {    // ADD A, D: Adds D to A
+            addInstruction(D);
+            return 4;
+        }
+        case 0x83: {    // ADD A, E: Adds E to A
+            addInstruction(E);
+            return 4;
+        }
+        case 0x84: {    // ADD A, H: Adds H to A
+            addInstruction(H);
+            return 4;
+        }
+        case 0x85: {    // ADD A, L: Adds L to A
+            addInstruction(L);
+            return 4;
+        }
+        case 0x86: {    // ADD A, (HL): Adds memory[HL] to A
+            uint8_t n = readByteFromMemory(getHL());
+            addInstruction(n);
+            return 8;
+        }
+        case 0xC6: {    // ADD A, n: Adds n to A. n = unsigned int 8 bit
+            uint8_t n = readByteFromMemory(pc++);
+            addInstruction(n);
+            return 8;
+        }
+        case 0x8F: {    // ADC A, A: Adds A + carry flag to A
+            addInstruction(A + (FC ? 1 : 0));
+            return 4;
+        }
+        case 0x88: {    // ADC A, B: Adds B + carry flag to A
+            addInstruction(B + (FC ? 1 : 0));
+            return 4;
+        }
+        case 0x89: {    // ADC A, C: Adds C + carry flag to A
+            addInstruction(C + (FC ? 1 : 0));
+            return 4;
+        }
+        case 0x8A: {    // ADC A, D: Adds D + carry flag to A
+            addInstruction(D + (FC ? 1 : 0));
+            return 4;
+        }
+        case 0x8B: {    // ADC A, E: Adds E + carry flag to A
+            addInstruction(E + (FC ? 1 : 0));
+            return 4;
+        }
+        case 0x8C: {    // ADC A, H: Adds H + carry flag to A
+            addInstruction(H + (FC ? 1 : 0));
+            return 4;
+        }
+        case 0x8D: {    // ADC A, L: Adds L + carry flag to A
+            addInstruction(L + (FC ? 1 : 0));
+            return 4;
+        }
+        case 0x8E: {    // ADC A, (HL): Adds memory[HL} + carry flag to A
+            uint8_t n = readByteFromMemory(getHL());
+            addInstruction(n + (FC ? 1 : 0));
+            return 8;
+        }
+        case 0xCE: {    // ADC A, n: Adds n + carry flag to A. n = unsigned int 8 bit
+            uint8_t n = readByteFromMemory(pc++);
+            addInstruction(n + (FC ? 1 : 0));
+            return 8;
+        }
+        case 0x97: {    // SUB A, A: Subtracts A from A
+            subInstruction(A);
+            return 4;
+        }
+        case 0x90: {    // SUB A, B: Subtracts B from A
+            subInstruction(B);
+            return 4;
+        }
+        case 0x91: {    // SUB A, C: Subtracts C from A
+            subInstruction(C);
+            return 4;
+        }
+        case 0x92: {    // SUB A, D: Subtracts D from A
+            subInstruction(D);
+            return 4;
+        }
+        case 0x93: {    // SUB A, E: Subtracts E from A
+            subInstruction(E);
+            return 4;
+        }
+        case 0x94: {    // SUB A, H: Subtracts H from A
+            subInstruction(H);
+            return 4;
+        }
+        case 0x95: {    // SUB A, L: Subtracts L from A
+            subInstruction(L);
+            return 4;
+        }
+        case 0x96: {    // SUB A, (HL): Subtracts memory[HL] from A
+            uint8_t n = readByteFromMemory(getHL());
+            subInstruction(n);
+            return 8;
+        }
+        case 0xD6: {    // SUB A, n: Subtracts n from A. n = unsigned int 8 bit
+            uint8_t n = readByteFromMemory(pc++);
+            subInstruction(n);
+            return 8;
+        }
+        case 0x9F: {    // SBC A, A: Subtracts A + carry flag from A
+            subInstruction(A + (FC ? 1 : 0));
+            return 4;
+        }
+        case 0x98: {    // SBC A, B: Subtracts B + carry flag from A
+            subInstruction(B + (FC ? 1 : 0));
+            return 4;
+        }
+        case 0x99: {    // SBC A, C: Subtracts C + carry flag from A
+            subInstruction(C + (FC ? 1 : 0));
+            return 4;
+        }
+        case 0x9A: {    // SBC A, D: Subtracts D + carry flag from A
+            subInstruction(D + (FC ? 1 : 0));
+            return 4;
+        }
+        case 0x9B: {    // SBC A, E: Subtracts E + carry flag from A
+            subInstruction(E + (FC ? 1 : 0));
+            return 4;
+        }
+        case 0x9C: {    // SBC A, H: Subtracts H + carry flag from A
+            subInstruction(H + (FC ? 1 : 0));
+            return 4;
+        }
+        case 0x9D: {    // SBC A, L: Subtracts L + carry flag from A
+            subInstruction(L + (FC ? 1 : 0));
+            return 4;
+        }
+        case 0x9E: {    // SBC A, (HL): Subtracts memory[HL] + carry flag from A
+            uint8_t n = readByteFromMemory(getHL());
+            subInstruction(n + (FC ? 1 : 0));
+            return 8;
+        }
+        case 0xDE: {    // SBC A, n: Subtracts n + carry flag from A. n = unsigned int 8 bit
+            uint8_t n = readByteFromMemory(pc++);
+            subInstruction(n + (FC ? 1 : 0));
+            return 8;
         }
         case 0xC3: {    // JP nn: Jump to the absolute address specified by the operand nn. nn = unsigned int 16 bit. LSB first
             uint8_t lsb = readByteFromMemory(pc++);

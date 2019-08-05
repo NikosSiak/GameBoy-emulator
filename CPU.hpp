@@ -24,9 +24,12 @@ class CPU {
 
     // Flags. Register F
     bool FZ = true;  // Zero Flag becomes set (true) if the result of an operation has been zero
-    bool FN = false; // Add/Sub Flag: indicates whether the previous instruction has been an addition or subtraction
+    bool FN = false; // Add/Sub Flag: indicates whether the previous instruction has been an addition or subtraction. true = sub. false = add
     bool FH = true;  // Half Carry Flag: carry for lower 4bits of the result
     bool FC = true;  // Carry Flag
+
+    void addInstruction(uint8_t target);
+    void subInstruction(uint8_t target);
 
 public:
     uint8_t getF();
