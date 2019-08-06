@@ -2,7 +2,7 @@
 // Created by nikos on 29-Jul-19.
 //
 
-#include "CPU.hpp"
+#include <CPU/CPU.hpp>
 
 uint8_t CPU::getF() {   // Return a unsigned 8 bit int which represents the F register
     uint8_t regF = 0x00;    // F register: FZ FN FH FC 0 0 0 0

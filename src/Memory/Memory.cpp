@@ -3,7 +3,7 @@
 //
 
 #include <fstream>
-#include "Memory.hpp"
+#include <Memory/Memory.hpp>
 
 Memory::Memory() {
 
