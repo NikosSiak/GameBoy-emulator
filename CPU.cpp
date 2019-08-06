@@ -83,6 +83,62 @@ void CPU::subInstruction(uint8_t target) {      // source register is always A
     FN = true;
 }
 
+void CPU::andInstruction(uint8_t target) {      // source register is always A
+    A &= target;
+    FZ = A == 0;
+    FN = false;
+    FH = true;
+    FC = false;
+}
+
+void CPU::orInstruction(uint8_t target) {       // source register is always A
+    A |= target;
+    FZ = A == 0;
+    FN = false;
+    FH = false;
+    FC = false;
+}
+
+void CPU::xorInstruction(uint8_t target) {      // source register is always A
+    A ^= target;
+    FZ = A == 0;
+    FN = false;
+    FH = false;
+    FC = false;
+}
+
+void CPU::cpInstruction(uint8_t target) {       // source register is always A
+    FZ = A == target;   // set if A - target == 0
+    FN = true;
+    FH = (target & 0x0F) > (A & 0x0F);
+    FC = target > A;
+}
+
+void CPU::incInstruction(uint8_t &target) {
+    FH = 0xF - (target & 0x0F) == 0;
+    target++;
+    FZ = target == 0;
+    FN = false;
+    // FC is unmodified
+}
+
+void CPU::decInstruction(uint8_t &target) {
+    FH = (A & 0x0F) == 0;
+    target--;
+    FZ = target == 0;
+    FN = true;
+    // FC is unmodified
+}
+
+void CPU::addHLInstruction(uint16_t target) {
+    uint16_t hl = getHL();
+    FH = (target & 0x0FFF) > 0xFFF - (hl & 0x0FFF);
+    FC = target > 0xFFFF - hl;
+    setHL(hl + target);
+    FN = false;
+    // FZ is unmodified
+}
+
 int CPU::emulateInstruction() {     // returns number of cycles needed for the instruction
 
     uint8_t opcode = readByteFromMemory(pc++);
@@ -663,6 +719,289 @@ int CPU::emulateInstruction() {     // returns number of cycles needed for the i
         case 0xDE: {    // SBC A, n: Subtracts n + carry flag from A. n = unsigned int 8 bit
             uint8_t n = readByteFromMemory(pc++);
             subInstruction(n + (FC ? 1 : 0));
+            return 8;
+        }
+        case 0xA7: {    // AND A, A: Set A to bitwise and between A and A
+            andInstruction(A);
+            return 4;
+        }
+        case 0xA0: {    // AND A, B: Set A to bitwise and between A and B
+            andInstruction(B);
+            return 4;
+        }
+        case 0xA1: {    // AND A, C: Set A to bitwise and between A and C
+            andInstruction(C);
+            return 4;
+        }
+        case 0xA2: {    // AND A, D: Set A to bitwise and between A and D
+            andInstruction(D);
+            return 4;
+        }
+        case 0xA3: {    // AND A, E: Set A to bitwise and between A and E
+            andInstruction(A);
+            return 4;
+        }
+        case 0xA4: {    // AND A, H: Set A to bitwise and between A and H
+            andInstruction(H);
+            return 4;
+        }
+        case 0xA5: {    // AND A, L: Set A to bitwise and between A and L
+            andInstruction(L);
+            return 4;
+        }
+        case 0xA6: {    // AND A, (HL): Set A to bitwise and between A and memory[HL]
+            uint8_t n = readByteFromMemory(getHL());
+            andInstruction(n);
+            return 8;
+        }
+        case 0xE6: {    // AND A, n: Set A to bitwise and between A and n. n = unsigned int 8 bit
+            uint8_t n = readByteFromMemory(pc++);
+            andInstruction(n);
+            return 8;
+        }
+        case 0xB7: {    // OR A, A: Set A to bitwise or between A and A
+            orInstruction(A);
+            return 4;
+        }
+        case 0xB0: {    // OR A, B: Set A to bitwise or between A and B
+            orInstruction(B);
+            return 4;
+        }
+        case 0xB1: {    // OR A, C: Set A to bitwise or between A and C
+            orInstruction(C);
+            return 4;
+        }
+        case 0xB2: {    // OR A, D: Set A to bitwise or between A and D
+            orInstruction(D);
+            return 4;
+        }
+        case 0xB3: {    // OR A, E: Set A to bitwise or between A and E
+            orInstruction(E);
+            return 4;
+        }
+        case 0xB4: {    // OR A, H: Set A to bitwise or between A and H
+            orInstruction(H);
+            return 4;
+        }
+        case 0xB5: {    // OR A, L: Set A to bitwise or between A and L
+            orInstruction(L);
+            return 4;
+        }
+        case 0xB6: {    // OR A, (HL): Set A to bitwise or between A and memory[HL]
+            uint8_t n = readByteFromMemory(getHL());
+            orInstruction(n);
+            return 8;
+        }
+        case 0xF6: {    // OR A, n: Set A to bitwise or between A and n. n = unsigned int 8 bit
+            uint8_t n = readByteFromMemory(pc++);
+            orInstruction(n);
+            return 8;
+        }
+        case 0xAF: {    // XOR A, A: Set A to bitwise xor between A and A
+            xorInstruction(A);
+            return 4;
+        }
+        case 0xA8: {    // XOR A, B: Set A to bitwise xor between A and B
+            xorInstruction(B);
+            return 4;
+        }
+        case 0xA9: {    // XOR A, C: Set A to bitwise xor between A and C
+            xorInstruction(C);
+            return 4;
+        }
+        case 0xAA: {    // XOR A, D: Set A to bitwise xor between A and D
+            xorInstruction(D);
+            return 4;
+        }
+        case 0xAB: {    // XOR A, E: Set A to bitwise xor between A and E
+            xorInstruction(E);
+            return 4;
+        }
+        case 0xAC: {    // XOR A, H: Set A to bitwise xor between A and H
+            xorInstruction(H);
+            return 4;
+        }
+        case 0xAD: {    // XOR A, L: Set A to bitwise xor between A and L
+            xorInstruction(L);
+            return 4;
+        }
+        case 0xAE: {    // XOR A, (HL): Set A to bitwise xor between A and memory[HL]
+            uint8_t n = readByteFromMemory(getHL());
+            xorInstruction(n);
+            return 8;
+        }
+        case 0xEE: {    // XOR A, n: Set A to bitwise xor between A and n. n = unsigned int 8 bit
+            uint8_t n = readByteFromMemory(pc++);
+            xorInstruction(n);
+            return 8;
+        }
+        case 0xBF: {    // CP A, A: Compare A with A
+            cpInstruction(A);
+            return 4;
+        }
+        case 0xB8: {    // CP A, B: Compare A with B
+            cpInstruction(B);
+            return 4;
+        }
+        case 0xB9: {    // CP A, C: Compare A with C
+            cpInstruction(C);
+            return 4;
+        }
+        case 0xBA: {    // CP A, D: Compare A with D
+            cpInstruction(D);
+            return 4;
+        }
+        case 0xBB: {    // CP A, E: Compare A with E
+            cpInstruction(E);
+            return 4;
+        }
+        case 0xBC: {    // CP A, H: Compare A with H
+            cpInstruction(H);
+            return 4;
+        }
+        case 0xBD: {    // CP A, L: Compare A with L
+            cpInstruction(L);
+            return 4;
+        }
+        case 0xBE: {    // CP A, (HL): Compare A with memory[HL]
+            uint8_t n = readByteFromMemory(getHL());
+            cpInstruction(n);
+            return 8;
+        }
+        case 0xFE: {    // CP A, n: Compare A with n. n = unsigned int 8 bit
+            uint8_t n = readByteFromMemory(pc++);
+            cpInstruction(n);
+            return 8;
+        }
+        case 0x3C: {    // INC A: Increment A
+            incInstruction(A);
+            return 4;
+        }
+        case 0x04: {    // INC B: Increment B
+            incInstruction(B);
+            return 4;
+        }
+        case 0x0C: {    // INC C: Increment C
+            incInstruction(C);
+            return 4;
+        }
+        case 0x14: {    // INC D: Increment D
+            incInstruction(D);
+            return 4;
+        }
+        case 0x1C: {    // INC E: Increment E
+            incInstruction(E);
+            return 4;
+        }
+        case 0x24: {    // INC H: Increment H
+            incInstruction(H);
+            return 4;
+        }
+        case 0x2C: {    // INC L: Increment L
+            incInstruction(L);
+            return 4;
+        }
+        case 0x34: {    // INC (HL): Increment memory[HL]
+            uint8_t n = readByteFromMemory(getHL());
+            incInstruction(n);
+            writeByteToMemory(getHL(), n);
+            return 12;
+        }
+        case 0x3D: {    // DEC A: Decrement A
+            decInstruction(A);
+            return 4;
+        }
+        case 0x05: {    // DEC B: Decrement B
+            decInstruction(B);
+            return 4;
+        }
+        case 0x0D: {    // DEC C: Decrement C
+            decInstruction(C);
+            return 4;
+        }
+        case 0x15: {    // DEC D: Decrement D
+            decInstruction(D);
+            return 4;
+        }
+        case 0x1D: {    // DEC E: Decrement E
+            decInstruction(E);
+            return 4;
+        }
+        case 0x25: {    // DEC H: Decrement H
+            decInstruction(H);
+            return 4;
+        }
+        case 0x2D: {    // DEC L: Decrement L
+            decInstruction(L);
+            return 4;
+        }
+        case 0x35: {    // DEC (HL): Decrement memory[HL]
+            uint8_t n = readByteFromMemory(getHL());
+            decInstruction(n);
+            writeByteToMemory(getHL(), n);
+            return 12;
+        }
+        case 0xE8: {    // ADD SP, n: Adds n to SP. n = signed int 8 bit
+            uint8_t n = readByteFromMemory(pc++);
+            FZ = false;
+            FN = false;
+            if (n < 0) {
+                FH = (n & 0x0F) > (sp & 0x000F);
+                FC = false;
+            }
+            else {
+                FH = (n & 0x0F) > 0xF - (sp & 0x000F);
+                FC = n > 0xFFFF - sp;
+            }
+            sp += n;
+            return 16;
+        }
+        case 0x09: {    // ADD HL, BC: Adds BC to HL
+            addHLInstruction(getBC());
+            return 8;
+        }
+        case 0x19: {    // ADD HL, DE: Adds BC to DE
+            addHLInstruction(getDE());
+            return 8;
+        }
+        case 0x29: {    // ADD HL, HL: Adds HL to HL
+            addHLInstruction(getHL());
+            return 8;
+        }
+        case 0x39: {    // ADD HL, SP: Adds SP to HL
+            addHLInstruction(sp);
+            return 8;
+        }
+        case 0x03: {    // INC BC: Increments BC
+            setBC(getBC() + 1);
+            return 8;
+        }
+        case 0x13: {    // INC DE: Increments DE
+            setDE(getDE() + 1);
+            return 8;
+        }
+        case 0x23: {    // INC HL: Increments HL
+            setHL(getHL() + 1);
+            return 8;
+        }
+        case 0x33: {    // INC SP: Increments SP
+            sp++;
+            return 8;
+        }
+        case 0x0B: {    // DEC BC: Decrements BC
+            setBC(getBC() - 1);
+            return 8;
+        }
+        case 0x1B: {    // DEC DE: Decrements DE
+            setDE(getDE() - 1);
+            return 8;
+        }
+        case 0x2B: {    // DEC HL: Decrements HL
+            setHL(getHL() - 1);
+            return 8;
+        }
+        case 0x3B: {    // DEC SP: Decrements SP
+            sp--;
             return 8;
         }
         case 0xC3: {    // JP nn: Jump to the absolute address specified by the operand nn. nn = unsigned int 16 bit. LSB first

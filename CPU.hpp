@@ -22,7 +22,7 @@ class CPU {
     uint16_t pc = 0;
     uint16_t sp = 0xFFFE;
 
-    // Flags. Register F
+    // Flags. Register F: FZ FN FH FC 0 0 0 0
     bool FZ = true;  // Zero Flag becomes set (true) if the result of an operation has been zero
     bool FN = false; // Add/Sub Flag: indicates whether the previous instruction has been an addition or subtraction. true = sub. false = add
     bool FH = true;  // Half Carry Flag: carry for lower 4bits of the result
@@ -30,6 +30,13 @@ class CPU {
 
     void addInstruction(uint8_t target);
     void subInstruction(uint8_t target);
+    void andInstruction(uint8_t target);
+    void orInstruction(uint8_t target);
+    void xorInstruction(uint8_t target);
+    void cpInstruction(uint8_t target);
+    void incInstruction(uint8_t &target);
+    void decInstruction(uint8_t &target);
+    void addHLInstruction(uint16_t target);
 
 public:
     uint8_t getF();
