@@ -1142,15 +1142,15 @@ int CPU::emulateInstruction() {     // returns number of cycles needed for the i
         }
         case 0x27: {    // DAA: Decimal adjust register A
             uint8_t adjust = 0;
-            if ((A & 0x0F) > 0x09 || FH) {
-                adjust |= 0x06;
-            }
-            if ((A & 0xF0) > 0x90 || FC) {
+            if ((A  > 0x99 && !FN) || FC) {
                 adjust |= 0x60;
                 FC = true;
             }
             else {
                 FC = false;
+            }
+            if (((A & 0x0F) > 0x09 && !FN) || FH) {
+                adjust |= 0x06;
             }
             A += FN ? -adjust : adjust;
             FZ = A == 0;
