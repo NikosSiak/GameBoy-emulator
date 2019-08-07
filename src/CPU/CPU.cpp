@@ -144,6 +144,9 @@ int CPU::emulateInstruction() {     // returns number of cycles needed for the i
     uint8_t opcode = readByteFromMemory(pc++);
 
     switch (opcode) {
+        case 0x00: {    // NOP: No operation
+            return 4;
+        }
         case 0x06: {    // LD B, n: Load n to register B. n = unsigned int 8 bit.
             B = readByteFromMemory(pc++);
             return 8;
@@ -942,7 +945,7 @@ int CPU::emulateInstruction() {     // returns number of cycles needed for the i
             return 12;
         }
         case 0xE8: {    // ADD SP, n: Adds n to SP. n = signed int 8 bit
-            uint8_t n = readByteFromMemory(pc++);
+            int8_t n = static_cast<int8_t>(readByteFromMemory(pc++));
             FZ = false;
             FN = false;
             if (n < 0) {
@@ -1136,6 +1139,100 @@ int CPU::emulateInstruction() {     // returns number of cycles needed for the i
             writeByteToMemory(--sp, pc & 0x00FF);   // write lsb of pc to stack
             pc = 0x0038;
             return 16;
+        }
+        case 0x27: {    // DAA: Decimal adjust register A
+            uint8_t adjust = 0;
+            if ((A & 0x0F) > 0x09 || FH) {
+                adjust |= 0x06;
+            }
+            if ((A & 0xF0) > 0x90 || FC) {
+                adjust |= 0x60;
+                FC = true;
+            }
+            else {
+                FC = false;
+            }
+            A += FN ? -adjust : adjust;
+            FZ = A == 0;
+            FH = false;
+            return 4;
+        }
+        case 0x2F: {    // CPL: Complement register A
+            A = ~A;
+            FN = true;
+            FH = true;
+            return 4;
+        }
+        case 0x37: {    // SCF: Set Carry flag
+            FC = true;
+            FN = false;
+            FH = false;
+            return 4;
+        }
+        case 0x3F: {    //  CCF: Complement carry flag
+            FC = !FC;
+            FN = false;
+            FH = false;
+            return 4;
+        }
+        case 0x76: {    // HALT: Power down CPU until an interrupt occurs
+            // TODO
+            return 4;
+        }
+        case 0x10: {    // STOP: Halt CPU & LCD display until button pressed. 2 bytes
+            readByteFromMemory(pc++);
+            // TODO
+            return 4;
+        }
+        case 0xF3: {    // DI: Disables interrupts
+            // TODO
+            return 4;
+        }
+        case 0xFB: {    // EI: Enable interrupts
+            // TODO
+            return 4;
+        }
+        case 0x07: {    // RLCA: Rotate A left. Old bit 7 to Carry flag
+            uint8_t bit7 = (A & 0x80) >> 7;
+            A <<= 1;
+            A |= bit7;
+            FC = bit7 == 1;
+            FZ = false;
+            FN = false;
+            FH = false;
+            return 4;
+        }
+        case 0x17: {    //  RLA: Rotate A left through Carry flag
+            uint8_t bit7 = (A & 0x80) >> 7;
+            uint8_t bit0 = FC ? 1 : 0;
+            A <<= 1;
+            A |= bit0;
+            FC = bit7 == 1;
+            FZ = false;
+            FN = false;
+            FH = false;
+            return 4;
+        }
+        case 0x0F: {    // RRCA: Rotate A right. Old bit 0 to Carry flag
+            uint8_t bit0 = (A & 0x01) << 7;
+            A >>= 1;
+            A |= bit0;
+            FC = bit0 != 0;
+            FZ = false;
+            FN = false;
+            FH = false;
+            return 4;
+        }
+        case 0x1F: {    // RRA: Rotate A right through Carry flag
+            uint8_t bit0 = A & 0x01;
+            uint8_t bit7 = (FC ? 1 : 0) << 7;
+            A >>= 1;
+            A |= bit7;
+            FC = bit0 == 1;
+            FZ = false;
+            FN = false;
+            FH = false;
+            return 4;
         }
         default:
             return 0;
