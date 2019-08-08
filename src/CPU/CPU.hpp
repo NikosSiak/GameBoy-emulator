@@ -37,6 +37,17 @@ class CPU {
     void incInstruction(uint8_t &target);
     void decInstruction(uint8_t &target);
     void addHLInstruction(uint16_t target);
+    void swapInstruction(uint8_t &target);
+    void rlcInstruction(uint8_t &target);
+    void rlInstruction(uint8_t &target);
+    void rrcInstruction(uint8_t &target);
+    void rrInstruction(uint8_t &target);
+    void slaInstruction(uint8_t &target);
+    void sraInstruction(uint8_t &target);
+    void srlInstruction(uint8_t &target);
+    void bitInstruction(uint8_t target, int bit);
+    void setInstruction(uint8_t &target, int bit);
+    void resInstruction(uint8_t &target, int bit);
 
 public:
     uint8_t getF();

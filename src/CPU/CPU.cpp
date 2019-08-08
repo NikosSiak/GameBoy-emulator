@@ -139,6 +139,103 @@ void CPU::addHLInstruction(uint16_t target) {
     // FZ is unmodified
 }
 
+void CPU::swapInstruction(uint8_t &target) {
+    uint8_t upperNibble = (target & 0xF0) >> 4;
+    uint8_t lowerNibble = (target & 0x0F) << 4;
+    target = lowerNibble | upperNibble;
+    FZ = target == 0;
+}
+
+void CPU::rlcInstruction(uint8_t &target) {
+    uint8_t bit7 = (target & 0x80) >> 7;
+    target <<= 1;
+    target |= bit7;
+    FC = bit7 == 1;
+    FZ = target == 0;
+    FN = false;
+    FH = false;
+}
+
+void CPU::rlInstruction(uint8_t &target) {
+    uint8_t bit7 = (target & 0x80) >> 7;
+    uint8_t bit0 = FC ? 1 : 0;
+    target <<= 1;
+    target |= bit0;
+    FC = bit7 == 1;
+    FZ = target == 0;
+    FN = false;
+    FH = false;
+}
+
+void CPU::rrcInstruction(uint8_t &target) {
+    uint8_t bit0 = (target & 0x01) << 7;
+    target >>= 1;
+    target |= bit0;
+    FC = bit0 != 0;
+    FZ = target == 0;
+    FN = false;
+    FH = false;
+}
+
+void CPU::rrInstruction(uint8_t &target) {
+    uint8_t bit0 = target & 0x01;
+    uint8_t bit7 = (FC ? 1 : 0) << 7;
+    target >>= 1;
+    target |= bit7;
+    FC = bit0 == 1;
+    FZ = target == 0;
+    FN = false;
+    FH = false;
+}
+
+void CPU::slaInstruction(uint8_t &target) {
+    uint8_t bit7 = (target & 0x80) >> 7;
+    target <<= 1;
+    FC = bit7 != 0;
+    FZ = target == 0;
+    FN = false;
+    FH = false;
+}
+
+void CPU::sraInstruction(uint8_t &target) {
+    uint8_t bit0 = target & 0x01;
+    uint8_t bit7 = target & 0x80;
+    target >>= 1;
+    target |= bit7;
+    FC = bit0 != 0;
+    FZ = target == 0;
+    FN = false;
+    FH = false;
+}
+
+void CPU::srlInstruction(uint8_t &target) {
+    uint8_t bit0 = target & 0x01;
+    target >>= 1;
+    FC = bit0 != 0;
+    FZ = target == 0;
+    FN = false;
+    FH = false;
+}
+
+void CPU::bitInstruction(uint8_t target, int bit) {
+    FZ = ((target >> bit) & 0x01) == 0;
+    FN = false;
+    FH = true;
+}
+
+void CPU::setInstruction(uint8_t &target, int bit) {
+    uint8_t setbit = 1 << bit;
+    target |= setbit;
+}
+
+void CPU::resInstruction(uint8_t &target, int bit) {
+    uint8_t lowerbits = target << (8 - bit);
+    lowerbits >>= (8 - bit);
+    target >>= (bit + 1);
+    target <<= (bit + 1);
+    target |= lowerbits;
+}
+
 int CPU::emulateInstruction() {     // returns number of cycles needed for the instruction
 
     uint8_t opcode = readByteFromMemory(pc++);
@@ -1192,47 +1289,572 @@ int CPU::emulateInstruction() {     // returns number of cycles needed for the i
             // TODO
             return 4;
         }
-        case 0x07: {    // RLCA: Rotate A left. Old bit 7 to Carry flag
-            uint8_t bit7 = (A & 0x80) >> 7;
-            A <<= 1;
-            A |= bit7;
-            FC = bit7 == 1;
+        case 0x07: {    // RLCA: Rotate A left. Old bit 7 to Carry flag. Resets zero flag
+            rlcInstruction(A);
             FZ = false;
-            FN = false;
-            FH = false;
             return 4;
         }
-        case 0x17: {    //  RLA: Rotate A left through Carry flag
-            uint8_t bit7 = (A & 0x80) >> 7;
-            uint8_t bit0 = FC ? 1 : 0;
-            A <<= 1;
-            A |= bit0;
-            FC = bit7 == 1;
+        case 0x17: {    //  RLA: Rotate A left through Carry flag. Resets zero flag
+            rlInstruction(A);
             FZ = false;
-            FN = false;
-            FH = false;
             return 4;
         }
-        case 0x0F: {    // RRCA: Rotate A right. Old bit 0 to Carry flag
-            uint8_t bit0 = (A & 0x01) << 7;
-            A >>= 1;
-            A |= bit0;
-            FC = bit0 != 0;
+        case 0x0F: {    // RRCA: Rotate A right. Old bit 0 to Carry flag. Resets zero flag
+            rrcInstruction(A);
             FZ = false;
-            FN = false;
-            FH = false;
             return 4;
         }
-        case 0x1F: {    // RRA: Rotate A right through Carry flag
-            uint8_t bit0 = A & 0x01;
-            uint8_t bit7 = (FC ? 1 : 0) << 7;
-            A >>= 1;
-            A |= bit7;
-            FC = bit0 == 1;
+        case 0x1F: {    // RRA: Rotate A right through Carry flag. Resets zero flag
+            rrInstruction(A);
             FZ = false;
-            FN = false;
-            FH = false;
             return 4;
+        }
+        case 0xCB: {    // Prefix CB
+            uint8_t opcodeSecondByte = readByteFromMemory(pc++);
+            switch (opcodeSecondByte) {
+                case 0x37: {    // SWAP A: Swap upper & lower nibbles of A
+                    swapInstruction(A);
+                    return 8;
+                }
+                case 0x30: {    // SWAP B: Swap upper & lower nibbles of B
+                    swapInstruction(B);
+                    return 8;
+                }
+                case 0x31: {    // SWAP C: Swap upper & lower nibbles of C
+                    swapInstruction(C);
+                    return 8;
+                }
+                case 0x32: {    // SWAP D: Swap upper & lower nibbles of D
+                    swapInstruction(A);
+                    return 8;
+                }
+                case 0x33: {    // SWAP E: Swap upper & lower nibbles of E
+                    swapInstruction(E);
+                    return 8;
+                }
+                case 0x34: {    // SWAP H: Swap upper & lower nibbles of H
+                    swapInstruction(H);
+                    return 8;
+                }
+                case 0x35: {    // SWAP L: Swap upper & lower nibbles of L
+                    swapInstruction(L);
+                    return 8;
+                }
+                case 0x36: {    // SWAP (HL): Swap upper & lower nibbles of memory[HL]
+                    uint8_t n = readByteFromMemory(getHL());
+                    swapInstruction(n);
+                    writeByteToMemory(getHL(), n);
+                    return 16;
+                }
+                case 0x07: {    // RLC A: Rotate A left. Old bit 7 to Carry flag
+                    rlcInstruction(A);
+                    return 8;
+                }
+                case 0x00: {    // RLC B: Rotate B left. Old bit 7 to Carry flag
+                    rlcInstruction(B);
+                    return 8;
+                }
+                case 0x01: {    // RLC C: Rotate C left. Old bit 7 to Carry flag
+                    rlcInstruction(C);
+                    return 8;
+                }
+                case 0x02: {    // RLC D: Rotate D left. Old bit 7 to Carry flag
+                    rlcInstruction(D);
+                    return 8;
+                }
+                case 0x03: {    // RLC E: Rotate E left. Old bit 7 to Carry flag
+                    rlcInstruction(E);
+                    return 8;
+                }
+                case 0x04: {    // RLC H: Rotate H left. Old bit 7 to Carry flag
+                    rlcInstruction(H);
+                    return 8;
+                }
+                case 0x05: {    // RLC L: Rotate L left. Old bit 7 to Carry flag
+                    rlcInstruction(L);
+                    return 8;
+                }
+                case 0x06: {    // RLC (HL): Rotate memory[HL] left. Old bit 7 to Carry flag
+                    uint8_t n = readByteFromMemory(getHL());
+                    rlcInstruction(n);
+                    writeByteToMemory(getHL(), n);
+                    return 16;
+                }
+                case 0x17: {    // RL A: Rotate A left through Carry flag
+                    rlInstruction(A);
+                    return 8;
+                }
+                case 0x10: {    // RL B: Rotate B left through Carry flag
+                    rlInstruction(B);
+                    return 8;
+                }
+                case 0x11: {    // RL C: Rotate C left through Carry flag
+                    rlInstruction(C);
+                    return 8;
+                }
+                case 0x12: {    // RL D: Rotate D left through Carry flag
+                    rlInstruction(D);
+                    return 8;
+                }
+                case 0x13: {    // RL E: Rotate E left through Carry flag
+                    rlInstruction(E);
+                    return 8;
+                }
+                case 0x14: {    // RL H: Rotate H left through Carry flag
+                    rlInstruction(H);
+                    return 8;
+                }
+                case 0x15: {    // RL L: Rotate L left through Carry flag
+                    rlInstruction(L);
+                    return 8;
+                }
+                case 0x16: {    // RL (HL): Rotate memory[HL] left through Carry flag
+                    uint8_t n = readByteFromMemory(getHL());
+                    rlInstruction(n);
+                    writeByteToMemory(getHL(), n);
+                    return 16;
+                }
+                case 0x0F: {    // RRC A: Rotate A right. Old bit 0 to Carry flag
+                    rrcInstruction(A);
+                    return 8;
+                }
+                case 0x08: {    // RRC B: Rotate B right. Old bit 0 to Carry flag
+                    rrcInstruction(B);
+                    return 8;
+                }
+                case 0x09: {    // RRC C: Rotate C right. Old bit 0 to Carry flag
+                    rrcInstruction(C);
+                    return 8;
+                }
+                case 0x0A: {    // RRC D: Rotate D right. Old bit 0 to Carry flag
+                    rrcInstruction(D);
+                    return 8;
+                }
+                case 0x0B: {    // RRC E: Rotate E right. Old bit 0 to Carry flag
+                    rrcInstruction(E);
+                    return 8;
+                }
+                case 0x0C: {    // RRC H: Rotate H right. Old bit 0 to Carry flag
+                    rrcInstruction(H);
+                    return 8;
+                }
+                case 0x0D: {    // RRC L: Rotate L right. Old bit 0 to Carry flag
+                    rrcInstruction(L);
+                    return 8;
+                }
+                case 0x0E: {    // RRC (HL): Rotate memory[HL] right. Old bit 0 to Carry flag
+                    uint8_t n = readByteFromMemory(getHL());
+                    rrcInstruction(n);
+                    writeByteToMemory(getHL(), n);
+                    return 16;
+                }
+                case 0x1F: {    // RR A: Rotate A right through Carry flag
+                    rrInstruction(A);
+                    return 8;
+                }
+                case 0x18: {    // RR B: Rotate B right through Carry flag
+                    rrInstruction(B);
+                    return 8;
+                }
+                case 0x19: {    // RR C: Rotate C right through Carry flag
+                    rrInstruction(C);
+                    return 8;
+                }
+                case 0x1A: {    // RR D: Rotate D right through Carry flag
+                    rrInstruction(D);
+                    return 8;
+                }
+                case 0x1B: {    // RR E: Rotate E right through Carry flag
+                    rrInstruction(E);
+                    return 8;
+                }
+                case 0x1C: {    // RR H: Rotate H right through Carry flag
+                    rrInstruction(H);
+                    return 8;
+                }
+                case 0x1D: {    // RR L: Rotate L right through Carry flag
+                    rrInstruction(L);
+                    return 8;
+                }
+                case 0x1E: {    // RR (HL): Rotate memory[HL] right through Carry flag
+                    uint8_t n = readByteFromMemory(getHL());
+                    rrInstruction(n);
+                    writeByteToMemory(getHL(), n);
+                    return 16;
+                }
+                case 0x27: {    // SLA A: Shift A left into Carry
+                    slaInstruction(A);
+                    return 8;
+                }
+                case 0x20: {    // SLA B: Shift B left into Carry
+                    slaInstruction(B);
+                    return 8;
+                }
+                case 0x21: {    // SLA C: Shift C left into Carry
+                    slaInstruction(C);
+                    return 8;
+                }
+                case 0x22: {    // SLA D: Shift D left into Carry
+                    slaInstruction(D);
+                    return 8;
+                }
+                case 0x23: {    // SLA E: Shift E left into Carry
+                    slaInstruction(E);
+                    return 8;
+                }
+                case 0x24: {    // SLA H: Shift H left into Carry
+                    slaInstruction(H);
+                    return 8;
+                }
+                case 0x25: {    // SLA L: Shift L left into Carry
+                    slaInstruction(L);
+                    return 8;
+                }
+                case 0x26: {    // SLA (HL): Shift memory[HL] left into Carry
+                    uint8_t n = readByteFromMemory(getHL());
+                    slaInstruction(n);
+                    writeByteToMemory(getHL(), n);
+                    return 16;
+                }
+                case 0x2F: {    // SRA A: Shift A right into Carry. MSB doesn't change
+                    sraInstruction(A);
+                    return 8;
+                }
+                case 0x28: {    // SRA B: Shift B right into Carry. MSB doesn't change
+                    sraInstruction(B);
+                    return 8;
+                }
+                case 0x29: {    // SRA C: Shift C right into Carry. MSB doesn't change
+                    sraInstruction(C);
+                    return 8;
+                }
+                case 0x2A: {    // SRA D: Shift D right into Carry. MSB doesn't change
+                    sraInstruction(D);
+                    return 8;
+                }
+                case 0x2B: {    // SRA E: Shift E right into Carry. MSB doesn't change
+                    sraInstruction(E);
+                    return 8;
+                }
+                case 0x2C: {    // SRA H: Shift H right into Carry. MSB doesn't change
+                    sraInstruction(H);
+                    return 8;
+                }
+                case 0x2D: {    // SRA L: Shift L right into Carry. MSB doesn't change
+                    sraInstruction(L);
+                    return 8;
+                }
+                case 0x2E: {    // SRA (HL): Shift memory[HL] right into Carry. MSB doesn't change
+                    uint8_t n = readByteFromMemory(getHL());
+                    sraInstruction(n);
+                    writeByteToMemory(getHL(), n);
+                    return 16;
+                }
+                case 0x3F: {    // SRL A: Shift A right into Carry
+                    srlInstruction(A);
+                    return 8;
+                }
+                case 0x38: {    // SRL B: Shift B right into Carry
+                    srlInstruction(B);
+                    return 8;
+                }
+                case 0x39: {    // SRL C: Shift C right into Carry
+                    srlInstruction(C);
+                    return 8;
+                }
+                case 0x3A: {    // SRL D: Shift D right into Carry
+                    srlInstruction(D);
+                    return 8;
+                }
+                case 0x3B: {    // SRL E: Shift E right into Carry
+                    srlInstruction(E);
+                    return 8;
+                }
+                case 0x3C: {    // SRL H: Shift H right into Carry
+                    srlInstruction(H);
+                    return 8;
+                }
+                case 0x3D: {    // SRL L: Shift L right into Carry
+                    srlInstruction(L);
+                    return 8;
+                }
+                case 0x3E: {    // SRL (HL): Shift memory[HL] right into Carry
+                    uint8_t n = readByteFromMemory(getHL());
+                    srlInstruction(n);
+                    writeByteToMemory(getHL(), n);
+                    return 16;
+                }
+                case 0x47:      // BIT 0, A: Test bit 0 of A
+                case 0x4F:      // BIT 1, A: Test bit 1 of A
+                case 0x57:      // BIT 2, A: Test bit 2 of A
+                case 0x5F:      // BIT 3, A: Test bit 3 of A
+                case 0x67:      // BIT 4, A: Test bit 4 of A
+                case 0x6F:      // BIT 5, A: Test bit 5 of A
+                case 0x77:      // BIT 6, A: Test bit 6 of A
+                case 0x7F: {    // BIT 7, A: Test bit 7 of A
+                    bitInstruction(A, (opcodeSecondByte - 0x47) >> 3);  // By subtracting the first case value and
+                    return 8;                          // shifting right by 3 i get the number of the bit i want to test
+                }
+                case 0x40:      // BIT n, B: Test bit n of B
+                case 0x48:
+                case 0x50:
+                case 0x58:
+                case 0x60:
+                case 0x68:
+                case 0x70:
+                case 0x78: {
+                    bitInstruction(B, (opcodeSecondByte - 0x40) >> 3);
+                    return 8;
+                }
+                case 0x41:      // BIT n, C: Test bit n of C
+                case 0x49:
+                case 0x51:
+                case 0x59:
+                case 0x61:
+                case 0x69:
+                case 0x71:
+                case 0x79: {
+                    bitInstruction(C, (opcodeSecondByte - 0x41) >> 3);
+                    return 8;
+                }
+                case 0x42:      // BIT n, D: Test bit n of D
+                case 0x4A:
+                case 0x52:
+                case 0x5A:
+                case 0x62:
+                case 0x6A:
+                case 0x72:
+                case 0x7A: {
+                    bitInstruction(D, (opcodeSecondByte - 0x42) >> 3);
+                    return 8;
+                }
+                case 0x43:      // BIT n, E: Test bit n of E
+                case 0x4B:
+                case 0x53:
+                case 0x5B:
+                case 0x63:
+                case 0x6B:
+                case 0x73:
+                case 0x7B: {
+                    bitInstruction(E, (opcodeSecondByte - 0x43) >> 3);
+                    return 8;
+                }
+                case 0x44:      // BIT n, H: Test bit n of H
+                case 0x4C:
+                case 0x54:
+                case 0x5C:
+                case 0x64:
+                case 0x6C:
+                case 0x74:
+                case 0x7C: {
+                    bitInstruction(H, (opcodeSecondByte - 0x44) >> 3);
+                    return 8;
+                }
+                case 0x45:      // BIT n, L: Test bit n of L
+                case 0x4D:
+                case 0x55:
+                case 0x5D:
+                case 0x65:
+                case 0x6D:
+                case 0x75:
+                case 0x7D: {
+                    bitInstruction(L, (opcodeSecondByte - 0x45) >> 3);
+                    return 8;
+                }
+                case 0x46:      // BIT n, (HL): Test bit n of memory[HL]
+                case 0x4E:
+                case 0x56:
+                case 0x5E:
+                case 0x66:
+                case 0x6E:
+                case 0x76:
+                case 0x7E: {
+                    uint8_t n = readByteFromMemory(getHL());
+                    bitInstruction(n, (opcodeSecondByte - 0x46) >> 3);
+                    return 12;
+                }
+                case 0x87:      // RES n, A: Reset bit n of A. n = 0
+                case 0x8F:      // n = 1
+                case 0x97:      // n = 2
+                case 0x9F:      // n = 3
+                case 0xA7:      // n = 4
+                case 0xAF:      // n = 5
+                case 0xB7:      // n = 6
+                case 0xBF: {    // n = 7
+                    resInstruction(A, (opcodeSecondByte - 0x87) >> 3);
+                    return 8;
+                }
+                case 0x80:      // RES n, B: Reset bit n of B
+                case 0x88:
+                case 0x90:
+                case 0x98:
+                case 0xA0:
+                case 0xA8:
+                case 0xB0:
+                case 0xB8: {
+                    resInstruction(B, (opcodeSecondByte - 0x80) >> 3);
+                    return 8;
+                }
+                case 0x81:      // RES n, C: Reset bit n of C
+                case 0x89:
+                case 0x91:
+                case 0x99:
+                case 0xA1:
+                case 0xA9:
+                case 0xB1:
+                case 0xB9: {
+                    resInstruction(C, (opcodeSecondByte - 0x81) >> 3);
+                    return 8;
+                }
+                case 0x82:      // RES n, D: Reset bit n of D
+                case 0x8A:
+                case 0x92:
+                case 0x9A:
+                case 0xA2:
+                case 0xAA:
+                case 0xB2:
+                case 0xBA: {
+                    resInstruction(D, (opcodeSecondByte - 0x82) >> 3);
+                    return 8;
+                }
+                case 0x83:      // RES n, E: Reset bit n of E
+                case 0x8B:
+                case 0x93:
+                case 0x9B:
+                case 0xA3:
+                case 0xAB:
+                case 0xB3:
+                case 0xBB: {
+                    resInstruction(E, (opcodeSecondByte - 0x83) >> 3);
+                    return 8;
+                }
+                case 0x84:      // RES n, H: Reset bit n of H
+                case 0x8C:
+                case 0x94:
+                case 0x9C:
+                case 0xA4:
+                case 0xAC:
+                case 0xB4:
+                case 0xBC: {
+                    resInstruction(H, (opcodeSecondByte - 0x84) >> 3);
+                    return 8;
+                }
+                case 0x85:      // RES n, L: Reset bit n of L
+                case 0x8D:
+                case 0x95:
+                case 0x9D:
+                case 0xA5:
+                case 0xAD:
+                case 0xB5:
+                case 0xBD: {
+                    resInstruction(L, (opcodeSecondByte - 0x85) >> 3);
+                    return 8;
+                }
+                case 0x86:      // RES n, (HL): Reset bit n of memory[HL]
+                case 0x8E:
+                case 0x96:
+                case 0x9E:
+                case 0xA6:
+                case 0xAE:
+                case 0xB6:
+                case 0xBE: {
+                    uint8_t n = readByteFromMemory(getHL());
+                    resInstruction(n, (opcodeSecondByte - 0x86) >> 3);
+                    writeByteToMemory(getHL(), n);
+                    return 16;
+                }
+                case 0xC7:      // SET n, A: Set bit n of A. n = 0
+                case 0xCF:      // n = 1
+                case 0xD7:      // n = 2
+                case 0xDF:      // n = 3
+                case 0xE7:      // n = 4
+                case 0xEF:      // n = 5
+                case 0xF7:      // n = 6
+                case 0xFF: {    // n = 7
+                    setInstruction(A, (opcodeSecondByte - 0x87) >> 3);
+                    return 8;
+                }
+                case 0xC0:      // SET n, B: Set bit n of B
+                case 0xC8:
+                case 0xD0:
+                case 0xD8:
+                case 0xE0:
+                case 0xE8:
+                case 0xF0:
+                case 0xF8: {
+                    setInstruction(B, (opcodeSecondByte - 0x80) >> 3);
+                    return 8;
+                }
+                case 0xC1:      // SET n, C: Set bit n of C
+                case 0xC9:
+                case 0xD1:
+                case 0xD9:
+                case 0xE1:
+                case 0xE9:
+                case 0xF1:
+                case 0xF9: {
+                    setInstruction(C, (opcodeSecondByte - 0x81) >> 3);
+                    return 8;
+                }
+                case 0xC2:      // SET n, D: Set bit n of D
+                case 0xCA:
+                case 0xD2:
+                case 0xDA:
+                case 0xE2:
+                case 0xEA:
+                case 0xF2:
+                case 0xFA: {
+                    setInstruction(D, (opcodeSecondByte - 0x82) >> 3);
+                    return 8;
+                }
+                case 0xC3:      // SET n, E: Set bit n of E
+                case 0xCB:
+                case 0xD3:
+                case 0xDB:
+                case 0xE3:
+                case 0xEB:
+                case 0xF3:
+                case 0xFB: {
+                    setInstruction(E, (opcodeSecondByte - 0x83) >> 3);
+                    return 8;
+                }
+                case 0xC4:      // SET n, H: Set bit n of H
+                case 0xCC:
+                case 0xD4:
+                case 0xDC:
+                case 0xE4:
+                case 0xEC:
+                case 0xF4:
+                case 0xFC: {
+                    setInstruction(H, (opcodeSecondByte - 0x84) >> 3);
+                    return 8;
+                }
+                case 0xC5:      // SET n, L: Set bit n of L
+                case 0xCD:
+                case 0xD5:
+                case 0xDD:
+                case 0xE5:
+                case 0xED:
+                case 0xF5:
+                case 0xFD: {
+                    setInstruction(L, (opcodeSecondByte - 0x85) >> 3);
+                    return 8;
+                }
+                case 0xC6:      // SET n, (HL): Set bit n of memory[HL]
+                case 0xCE:
+                case 0xD6:
+                case 0xDE:
+                case 0xE6:
+                case 0xEE:
+                case 0xF6:
+                case 0xFE: {
+                    uint8_t n = readByteFromMemory(getHL());
+                    setInstruction(n, (opcodeSecondByte - 0x86) >> 3);
+                    writeByteToMemory(getHL(), n);
+                    return 16;
+                }
+
+            }
         }
         default:
             return 0;
