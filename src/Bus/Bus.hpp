@@ -7,6 +7,7 @@
 
 
 #include <Memory/Memory.hpp>
+#include <cstdint>
 
 class Bus {
 
