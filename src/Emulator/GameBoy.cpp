@@ -7,3 +7,7 @@
 void GameBoy::loadGame(const char *romPath) {
     this->ram.loadGame(romPath);
 }
+
+void GameBoy::emulateCpu() {
+    cpu.emulateInstruction();
+}

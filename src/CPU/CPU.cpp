@@ -56,11 +56,11 @@ void CPU::setHL(uint16_t value) {
 }
 
 uint8_t CPU::readByteFromMemory(uint16_t address) {
-    // TODO
+    return m_bus.readByteFromMemory(address);
 }
 
 void CPU::writeByteToMemory(uint16_t address, uint8_t value) {
-    // TODO
+    m_bus.writeByteToMemory(address, value);
 }
 
 void CPU::enableInterruptRegister() {

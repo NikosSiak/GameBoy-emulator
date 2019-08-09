@@ -13,10 +13,12 @@ class GameBoy {
 
     Memory ram;
     CPU cpu;
+    Bus bus;
 
 public:
+    GameBoy() : bus(ram), cpu(bus) {}
     void loadGame(const char *romPath);
-
+    void emulateCpu();
 };
 
 
