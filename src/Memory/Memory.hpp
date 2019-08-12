@@ -21,6 +21,16 @@
 
 #include <cstdint>
 
+enum class MBC_TYPE {
+    RomOnly,
+    MBC1,
+    MBC2,
+    MBC3,
+    MBC4,
+    MBC5,
+    Unknown
+};
+
 class Memory {
 
     uint8_t bios[256];
@@ -35,6 +45,7 @@ class Memory {
     bool hasBootedUp;
     uint8_t romBankNumber;
     uint8_t ramBankNumber;
+    MBC_TYPE mbc_type;
 
 public:
     Memory();

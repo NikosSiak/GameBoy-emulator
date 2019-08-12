@@ -89,6 +89,29 @@ void Memory::loadGame(const char *romPath) {
     rom.read(reinterpret_cast<char *>(cart_rom), fsize);
 
     rom.close();
+
+    uint8_t cart_type = cart_rom[0x0147];
+    if (cart_type == 0) {
+        mbc_type = MBC_TYPE::RomOnly;
+    }
+    else if (cart_type <= 3) {
+        mbc_type = MBC_TYPE::MBC1;
+    }
+    else if (cart_type == 5 || cart_type == 6) {
+        mbc_type = MBC_TYPE::MBC2;
+    }
+    else if (cart_type >= 0x0F && cart_type <= 0x13) {
+        mbc_type = MBC_TYPE::MBC3;
+    }
+    else if (cart_type >= 0x15 && cart_type <= 0x17) {
+        mbc_type = MBC_TYPE::MBC4;
+    }
+    else if (cart_type >= 0x19 && cart_type <= 0x1E) {
+        mbc_type = MBC_TYPE::MBC5;
+    }
+    else {
+        mbc_type = MBC_TYPE::Unknown;
+    }
 }
 
 uint8_t Memory::readByte(uint16_t address) {
