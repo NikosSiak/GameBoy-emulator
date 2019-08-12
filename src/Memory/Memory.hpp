@@ -24,9 +24,9 @@
 class Memory {
 
     uint8_t bios[256];
-    uint8_t *cart_rom;              // cartridge rom
-    uint8_t wram[8 * 1024];     // 8KBytes work ram
-    // TODO: external ram
+    uint8_t *cart_rom;
+    uint8_t wram[8 * 1024];
+    uint8_t external_ram[32 * 1024];
     uint8_t vram[8 * 1024];
     uint8_t oam[160];
     uint8_t io_registers[128];
@@ -34,6 +34,7 @@ class Memory {
     bool interrupt_register;
     bool hasBootedUp;
     uint8_t romBankNumber;
+    uint8_t ramBankNumber;
 
 public:
     Memory();

@@ -8,7 +8,8 @@
 Memory::Memory() {
 
     hasBootedUp = false;
-    romBankNumber = 0;
+    romBankNumber = 1;
+    ramBankNumber = 0;
 
     // Boot rom
     uint8_t bootstrap_rom[256] = {
@@ -98,14 +99,15 @@ uint8_t Memory::readByte(uint16_t address) {
         return cart_rom[address];
     }
     if (address < 0x8000) {
-        address = (romBankNumber * 0x4000) + (address - 0x4000);
+        address = (romBankNumber * 0x4000) + (address - 0x4000);    // 0x4000 = 16KBytes the size of each bank
         return cart_rom[address];
     }
     if (address < 0xA000) {
         return vram[address - 0x8000];
     }
     if (address < 0xC000) {
-        // TODO extrenal ram
+        address = (ramBankNumber * 0x2000) + (address - 0xA000);    // 0x2000 = 8KBytes the size of each bank
+        return external_ram[address];
     }
     if (address < 0xE000) {
         return wram[address - 0xC000];
