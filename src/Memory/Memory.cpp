@@ -10,6 +10,8 @@ Memory::Memory() {
     hasBootedUp = false;
     romBankNumber = 1;
     ramBankNumber = 0;
+    ramEnabled = false;
+    romMode = true;
 
     // Boot rom
     uint8_t bootstrap_rom[256] = {
@@ -129,8 +131,11 @@ uint8_t Memory::readByte(uint16_t address) {
         return vram[address - 0x8000];
     }
     if (address < 0xC000) {
-        address = (ramBankNumber * 0x2000) + (address - 0xA000);    // 0x2000 = 8KBytes the size of each bank
-        return external_ram[address];
+        if (ramEnabled) {
+            address = (ramBankNumber * 0x2000) + (address - 0xA000);    // 0x2000 = 8KBytes the size of each bank
+            return external_ram[address];
+        }
+        throw std::runtime_error("Tried to read from external ram while ram its disabled");
     }
     if (address < 0xE000) {
         return wram[address - 0xC000];
@@ -154,5 +159,98 @@ uint8_t Memory::readByte(uint16_t address) {
 }
 
 void Memory::writeByte(uint16_t address, uint8_t value) {
+    if (address < 0x2000) {
+        if (mbc_type == MBC_TYPE::MBC1 || mbc_type == MBC_TYPE::MBC2 || mbc_type == MBC_TYPE::MBC5) {
+            enableRam(address, value);
+        }
+        else if (mbc_type == MBC_TYPE::MBC3) {
+            enableRam(address, value);
+            // TODO: enable RTC Registers
+        }
+    }
+    else if (address < 0x4000) {
+        if (mbc_type == MBC_TYPE::MBC1) {       // change the lower 5 bits of rom bank number
+            uint8_t lower5bits = value & 0x1F;
+            romBankNumber &= 0xE0;      // set the lower 5 bits to 0 and keep the upper 3 the same
+            romBankNumber |= lower5bits;
+            if (romBankNumber == 0) {
+                romBankNumber++;
+            }
+        }
+        else if (mbc_type == MBC_TYPE::MBC2) {
+            uint8_t upperAddress = address >> 8;
+            if ((upperAddress & 0x01) == 1) {   // the least significant bit of the upper byte of the address must be 1 to select rom bank
+                romBankNumber = value & 0x0F;
+                if (romBankNumber == 0) {
+                    romBankNumber++;
+                }
+            }
+        }
+        // TODO: other mbc's
+    }
+    else if (address < 0x6000) {
+        if (mbc_type == MBC_TYPE::MBC1) {
+            if (romMode) {      // change bit 5 and 6 of rom bank number
+                romBankNumber &= 0x1F;  // set the first 3 bits to 0 and keep the lower 5 the same
+                value &= 0xE0;      // set the lower 5 bits to 0
+                romBankNumber |= value;
+                if (romBankNumber == 0) {
+                    romBankNumber++;
+                }
+            }
+            else {
+                ramBankNumber = value & 0x03;   // max of 4 ram banks need 2 bits to encode
+            }
+        }
+        // TODO: other mbc's
+    }
+    else if (address < 0x8000) {
+        if (mbc_type == MBC_TYPE::MBC1) {
+            if ((value & 0x01) == 0) {
+                romMode = true;
+                ramBankNumber = 0;
+            } else {
+                romMode = false;
+            }
+        }
+        // TODO: other mbc's
+    }
+    else if (address < 0xA000) {
+        vram[address - 0x8000] = value;
+    }
+    else if (address < 0xC000) {
+        if (ramEnabled) {
+            address = (ramBankNumber * 0x2000) + (address - 0xA000);
+            external_ram[address] = value;
+        }
+    }
+    else if (address < 0xE000) {
+        wram[address - 0xC000] = value;
+    }
+    else if (address < 0xFE00) {
+        // TODO: echo ram
+    }
+    else if (address < 0xFEA0) {
+        oam[address - 0xFE00] = value;
+    }
+    else if (address >= 0xFF00 && address <= 0xFF7F) {
+        io_registers[address - 0xFF00] = value;
+    }
+    else if (address < 0xFFFF) {
+        hram[address - 0xFF80] = value;
+    }
+    else if (address == 0xFFFF) {
+        interrupt_register = value == 1;
+    }
+    throw std::runtime_error("Tried to write to invalid memory address");
+}
 
+void Memory::enableRam(uint16_t address, uint8_t value) {
+    if (mbc_type == MBC_TYPE::MBC2) {
+        uint8_t upperAddress = address >> 8;
+        if ((upperAddress & 0x01) == 1) {       // enable/disable only if the least significant bit of the upper byte of the address is 0
+            return;
+        }
+    }
+    ramEnabled = (value & 0x0F) == 0x0A;    // true if the lower nibble is 0xA
 }

@@ -43,9 +43,12 @@ class Memory {
     uint8_t hram[127];
     bool interrupt_register;
     bool hasBootedUp;
+    bool ramEnabled;
+    bool romMode;
     uint8_t romBankNumber;
     uint8_t ramBankNumber;
     MBC_TYPE mbc_type;
+    void enableRam(uint16_t address, uint8_t value);
 
 public:
     Memory();
