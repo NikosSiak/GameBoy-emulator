@@ -36,18 +36,22 @@ class Memory {
     uint8_t bios[256];
     uint8_t *cart_rom;
     uint8_t wram[8 * 1024];
-    uint8_t external_ram[32 * 1024];
+    uint8_t *external_ram;
     uint8_t vram[8 * 1024];
     uint8_t oam[160];
     uint8_t io_registers[128];
     uint8_t hram[127];
     bool interrupt_register;
+
     bool hasBootedUp;
     bool ramEnabled;
     bool romMode;
-    uint8_t romBankNumber;
+
+    uint16_t romBankNumber;     // 16 bit to support mbc5 which needs 9 bits
     uint8_t ramBankNumber;
+
     MBC_TYPE mbc_type;
+
     void enableRam(uint16_t address, uint8_t value);
 
 public:

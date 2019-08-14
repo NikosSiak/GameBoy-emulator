@@ -74,7 +74,8 @@ Memory::Memory() {
 }
 
 Memory::~Memory() {
-    delete cart_rom;
+    delete[] cart_rom;
+    delete[] external_ram;
 }
 
 void Memory::loadGame(const char *romPath) {
@@ -114,6 +115,26 @@ void Memory::loadGame(const char *romPath) {
     else {
         mbc_type = MBC_TYPE::Unknown;
     }
+
+    uint8_t ram_size = cart_rom[0x0149];
+    if (ram_size == 0) {
+        external_ram = new uint8_t[512];    // for mbc2
+    }
+    else if (ram_size == 1) {
+        external_ram = new uint8_t[2 * 1024];
+    }
+    else if (ram_size == 2) {
+        external_ram = new uint8_t[8 * 1024];
+    }
+    else if (ram_size == 3) {
+        external_ram = new uint8_t[32 * 1024];
+    }
+    else if (ram_size == 4) {
+        external_ram = new uint8_t[128 * 1024];
+    }
+    else if (ram_size == 5) {
+        external_ram = new uint8_t[64 * 1024];
+    }
 }
 
 uint8_t Memory::readByte(uint16_t address) {
@@ -131,9 +152,14 @@ uint8_t Memory::readByte(uint16_t address) {
         return vram[address - 0x8000];
     }
     if (address < 0xC000) {
-        if (ramEnabled) {
-            address = (ramBankNumber * 0x2000) + (address - 0xA000);    // 0x2000 = 8KBytes the size of each bank
-            return external_ram[address];
+        if (mbc_type == MBC_TYPE::MBC3) {
+            // TODO: RTC register
+        }
+        else {
+            if (ramEnabled) {
+                address = (ramBankNumber * 0x2000) + (address - 0xA000);    // 0x2000 = 8KBytes the size of each bank
+                return external_ram[address];
+            }
         }
         throw std::runtime_error("Tried to read from external ram while ram its disabled");
     }
@@ -160,11 +186,8 @@ uint8_t Memory::readByte(uint16_t address) {
 
 void Memory::writeByte(uint16_t address, uint8_t value) {
     if (address < 0x2000) {
-        if (mbc_type == MBC_TYPE::MBC1 || mbc_type == MBC_TYPE::MBC2 || mbc_type == MBC_TYPE::MBC5) {
-            enableRam(address, value);
-        }
-        else if (mbc_type == MBC_TYPE::MBC3) {
-            enableRam(address, value);
+        enableRam(address, value);
+        if (mbc_type == MBC_TYPE::MBC3) {
             // TODO: enable RTC Registers
         }
     }
@@ -186,7 +209,21 @@ void Memory::writeByte(uint16_t address, uint8_t value) {
                 }
             }
         }
-        // TODO: other mbc's
+        else if (mbc_type == MBC_TYPE::MBC3) {
+            romBankNumber = value & 0x7F;   // 7 bit
+            if (romBankNumber == 0) {
+                romBankNumber++;
+            }
+        }
+        else if (mbc_type == MBC_TYPE::MBC5) {
+            if (address < 0x3000) {
+                romBankNumber = value;
+            }
+            else {
+                value &= 0x01;
+                romBankNumber = (value << 8) | romBankNumber;
+            }
+        }
     }
     else if (address < 0x6000) {
         if (mbc_type == MBC_TYPE::MBC1) {
@@ -202,7 +239,17 @@ void Memory::writeByte(uint16_t address, uint8_t value) {
                 ramBankNumber = value & 0x03;   // max of 4 ram banks need 2 bits to encode
             }
         }
-        // TODO: other mbc's
+        else if (mbc_type == MBC_TYPE::MBC3) {
+            if (value >= 0x08 && value <= 0x0C) {
+                // TODO: RTC register
+            }
+            else {
+                ramBankNumber = value & 0x03;
+            }
+        }
+        else if (mbc_type == MBC_TYPE::MBC5) {
+            ramBankNumber = value & 0x0F;
+        }
     }
     else if (address < 0x8000) {
         if (mbc_type == MBC_TYPE::MBC1) {
@@ -213,15 +260,22 @@ void Memory::writeByte(uint16_t address, uint8_t value) {
                 romMode = false;
             }
         }
-        // TODO: other mbc's
+        if (mbc_type == MBC_TYPE::MBC3) {
+            // TODO: clock
+        }
     }
     else if (address < 0xA000) {
         vram[address - 0x8000] = value;
     }
     else if (address < 0xC000) {
-        if (ramEnabled) {
-            address = (ramBankNumber * 0x2000) + (address - 0xA000);
-            external_ram[address] = value;
+        if (mbc_type == MBC_TYPE::MBC3) {
+            // TODO: RTC register
+        }
+        else {
+            if (ramEnabled) {
+                address = (ramBankNumber * 0x2000) + (address - 0xA000);
+                external_ram[address] = value;
+            }
         }
     }
     else if (address < 0xE000) {
