@@ -11,8 +11,8 @@
 
 class GameBoy {
 
-    Memory ram;
     CPU cpu;
+    Memory memory;
 
 public:
     GameBoy();

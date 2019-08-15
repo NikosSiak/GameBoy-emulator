@@ -7,7 +7,7 @@
 GameBoy::GameBoy() : cpu(memory), timers(memory) {}
 
 void GameBoy::loadGame(const char *romPath) {
-    this->ram.loadGame(romPath);
+    this->memory.loadGame(romPath);
 }
 
 void GameBoy::emulateCpu() {
