@@ -8,16 +8,18 @@
 
 #include <CPU/CPU.hpp>
 #include <Memory/Memory.hpp>
+#include <Timers/Timers.hpp>
 
 class GameBoy {
 
     CPU cpu;
     Memory memory;
+    Timers timers;
 
 public:
     GameBoy();
     void loadGame(const char *romPath);
-    void emulateCpu();
+    void emulate();
 };
 
 

@@ -10,6 +10,10 @@ void GameBoy::loadGame(const char *romPath) {
     this->memory.loadGame(romPath);
 }
 
-void GameBoy::emulateCpu() {
-    cpu.emulateInstruction();
+void GameBoy::emulate() {
+    int cycles = cpu.emulateInstruction();
+    while(cycles != 0) {
+        timers.updateTimers(cycles);
+        cycles = cpu.emulateInstruction();
+    }
 }
