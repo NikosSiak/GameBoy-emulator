@@ -4,6 +4,8 @@
 
 #include <Emulator/GameBoy.hpp>
 
+GameBoy::GameBoy() : cpu(memory), timers(memory) {}
+
 void GameBoy::loadGame(const char *romPath) {
     this->ram.loadGame(romPath);
 }

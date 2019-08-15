@@ -4,6 +4,8 @@
 
 #include <CPU/CPU.hpp>
 
+CPU::CPU(Memory &memory) : m_memory(memory) {}
+
 uint8_t CPU::getF() {   // Return a unsigned 8 bit int which represents the F register
     uint8_t regF = 0x00;    // F register: FZ FN FH FC 0 0 0 0
     if (FC) {
@@ -56,11 +58,11 @@ void CPU::setHL(uint16_t value) {
 }
 
 uint8_t CPU::readByteFromMemory(uint16_t address) {
-    return m_bus.readByteFromMemory(address);
+    return m_memory.readByte(address);
 }
 
 void CPU::writeByteToMemory(uint16_t address, uint8_t value) {
-    m_bus.writeByteToMemory(address, value);
+    m_memory.writeByte(address, value);
 }
 
 void CPU::enableInterruptRegister() {

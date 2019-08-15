@@ -7,7 +7,7 @@
 
 
 #include <cstdint>
-#include <Bus/Bus.hpp>
+#include <Memory/Memory.hpp>
 
 class CPU {
 
@@ -23,7 +23,7 @@ class CPU {
     uint16_t pc = 0;
     uint16_t sp = 0xFFFE;
 
-    Bus &m_bus;
+    Memory &m_memory;
 
     // Flags. Register F: FZ FN FH FC 0 0 0 0
     bool FZ = true;  // Zero Flag becomes set (true) if the result of an operation has been zero
@@ -53,7 +53,7 @@ class CPU {
     void resInstruction(uint8_t &target, int bit);
 
 public:
-    CPU(Bus &bus) : m_bus(bus) {}
+    CPU(Memory &memory);
     uint8_t getF();
     void setF(uint8_t value);
     uint16_t getBC();
