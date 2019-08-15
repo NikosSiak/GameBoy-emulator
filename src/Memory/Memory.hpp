@@ -60,6 +60,14 @@ public:
     void loadGame(const char *romPath);
     uint8_t readByte(uint16_t address);
     void writeByte(uint16_t address, uint8_t value);
+    uint8_t getTIMA();
+    void setTIMA(uint8_t value);
+    uint8_t getTMA();
+    void setTMA(uint8_t value);
+    uint8_t getTAC();
+    void setTAC(uint8_t value);
+    uint8_t getDIV();
+    void setDIV(uint8_t value);
 };
 
 

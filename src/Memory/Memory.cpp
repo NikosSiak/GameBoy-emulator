@@ -308,3 +308,41 @@ void Memory::enableRam(uint16_t address, uint8_t value) {
     }
     ramEnabled = (value & 0x0F) == 0x0A;    // true if the lower nibble is 0xA
 }
+
+// Timer counter
+uint8_t Memory::getTIMA() {
+    return io_registers[5];
+}
+
+void Memory::setTIMA(uint8_t value) {
+    io_registers[5] = value;
+}
+
+// Timer modulo. When the TIMA overflows, this data will be loaded
+uint8_t Memory::getTMA() {
+    return io_registers[6];
+}
+
+void Memory::setTMA(uint8_t value) {
+    io_registers[6] = value;
+}
+
+// Timer Control. Bit 2 = Timer Stop 0 Stop - 1 Start,
+// bits 1-0 = Input Clock Select 00 4096Hz, 01 262144Hz, 10 65536Hz, 11 16384Hz
+uint8_t Memory::getTAC() {
+    return io_registers[7];
+}
+
+void Memory::setTAC(uint8_t value) {
+    io_registers[7] = value;
+}
+
+// Divider Register. This register is incremented 16384 times a second
+uint8_t Memory::getDIV() {
+    return io_registers[4];
+}
+
+void Memory::setDIV(uint8_t value) {
+    io_registers[4] = value;
+}
+
