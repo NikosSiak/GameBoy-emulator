@@ -10,6 +10,12 @@ Timers::Timers(Memory &memory) : m_memory(memory) {}
 void Timers::updateTimers(int cycles) {
     updateDIVRegister(cycles);
 
+    uint8_t freq = m_memory.getTAC() & 0b11;
+    if (freq != frequency_clock_select) {
+        setClockFreq();
+        frequency_clock_select = freq;
+    }
+
     if (isClockEnabled()) {
         m_TimerCounter -= cycles;
 
