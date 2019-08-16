@@ -41,7 +41,7 @@ class Memory {
     uint8_t oam[160];
     uint8_t io_registers[128];
     uint8_t hram[127];
-    bool interrupt_register;
+    uint8_t interrupt_register;
 
     bool hasBootedUp;
     bool ramEnabled;

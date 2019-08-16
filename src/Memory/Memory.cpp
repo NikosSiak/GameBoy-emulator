@@ -69,7 +69,7 @@ Memory::Memory() {
     io_registers[0x49] = 0xFF;
     io_registers[0x4A] = 0x00;
     io_registers[0x4B] = 0x00;
-    interrupt_register = false;
+    interrupt_register = 0x00;
 
 }
 
@@ -179,7 +179,7 @@ uint8_t Memory::readByte(uint16_t address) {
         return hram[address - 0xFF80];
     }
     if (address == 0xFFFF) {
-        return interrupt_register ? 1 : 0;
+        return interrupt_register;
     }
     throw std::runtime_error("Tried to read from invalid memory address");
 }
@@ -288,13 +288,18 @@ void Memory::writeByte(uint16_t address, uint8_t value) {
         oam[address - 0xFE00] = value;
     }
     else if (address >= 0xFF00 && address <= 0xFF7F) {
-        io_registers[address - 0xFF00] = value;
+        if (address == 0xFF04) {    // memory[0xFF04] = Divider Register. Writing any value sets it to 0
+            io_registers[4] = 0;
+        }
+        else {
+            io_registers[address - 0xFF00] = value;
+        }
     }
     else if (address < 0xFFFF) {
         hram[address - 0xFF80] = value;
     }
     else if (address == 0xFFFF) {
-        interrupt_register = value == 1;
+        interrupt_register = value;
     }
     throw std::runtime_error("Tried to write to invalid memory address");
 }
