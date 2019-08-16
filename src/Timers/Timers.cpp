@@ -26,7 +26,10 @@ void Timers::updateTimers(int cycles) {
             // when TIMA overflows TMA is written to it
             if (m_memory.getTIMA() == 255) {
                 m_memory.setTIMA(m_memory.getTMA());
-                // TODO interrupts
+                // set timer overflow interrupt
+                uint8_t interrupt_requests = m_memory.getIF();
+                interrupt_requests |= 4;    // timer overflow interrupt is in bit 2 (counting from 0)
+                m_memory.setIF(interrupt_requests);
             }
             else {
                 m_memory.setTIMA(m_memory.getTIMA() + 1);

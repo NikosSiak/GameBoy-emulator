@@ -68,6 +68,10 @@ public:
     void setTAC(uint8_t value);
     uint8_t getDIV();
     void setDIV(uint8_t value);
+    uint8_t getIF();
+    void setIF(uint8_t value);
+    uint8_t getIE();
+    void setIE(uint8_t value);
 };
 
 

@@ -65,10 +65,6 @@ void CPU::writeByteToMemory(uint16_t address, uint8_t value) {
     m_memory.writeByte(address, value);
 }
 
-void CPU::enableInterruptRegister() {
-    // TODO
-}
-
 void CPU::addInstruction(uint8_t target) {      // source register is always A
     FH = (target & 0x0F) > 0xF - (A & 0x0F);
     FC = target > 0xFF - A;
@@ -238,7 +234,53 @@ void CPU::resInstruction(uint8_t &target, int bit) {
     target |= lowerbits;
 }
 
+// Interrupt Request Flag(IF) and Interrupt Enable(IE) Register
+// Bit 4: Transition from High to Low of Pin number P10-P13
+// Bit 3: Serial I/O transfer complete
+// Bit 2: Timer Overflow
+// Bit 1: LCDC
+// Bit 0: V-Blank
+void CPU::checkInterrupts() {
+    if (master_interrupt_switch) {
+        uint8_t interrupt_requests = m_memory.getIF();
+        uint8_t interrupts_enabled = m_memory.getIE();
+        for (int i = 0; i < 5; i++) {
+            uint8_t select_bit = 1 << i;    // get power(2, i) to select its bit for the different interrupts
+            uint8_t requests_selected_bit = interrupt_requests & select_bit;
+            uint8_t enabled_selected_bit = interrupts_enabled & select_bit;
+            if (requests_selected_bit != 0 && enabled_selected_bit != 0) {
+                serveInterrupts(i);
+            }
+        }
+    }
+}
+
+void CPU::serveInterrupts(uint8_t interrupt) {
+    // prevent all interrupts
+    master_interrupt_switch = false;
+    change_master_interrupt_switch = false;
+
+    // reset interrupt request for this interrupt
+    uint8_t interrupt_requests = m_memory.getIF();
+    interrupt_requests &= ~(1 << interrupt);    // set the bit that represents this interrupt to 0
+    m_memory.setIF(interrupt_requests);
+
+    // push pc to stack
+    writeByteToMemory(--sp, pc >> 8);       // write msb of pc to stack
+    writeByteToMemory(--sp, pc & 0x00FF);   // write lsb of pc to stack
+
+    switch (interrupt) {
+        case 0: pc = 0x40; break;
+        case 1: pc = 0x48; break;
+        case 2: pc = 0x50; break;
+        case 3: pc = 0x58; break;
+        case 4: pc = 0x60; break;
+    }
+}
+
 int CPU::emulateInstruction() {     // returns number of cycles needed for the instruction
+
+    master_interrupt_switch = change_master_interrupt_switch;
 
     uint8_t opcode = readByteFromMemory(pc++);
 
@@ -1187,7 +1229,9 @@ int CPU::emulateInstruction() {     // returns number of cycles needed for the i
             uint8_t msb = readByteFromMemory(sp++);
             pc = (msb << 8) | lsb;
             if (opcode == 0xD9) {
-                enableInterruptRegister();
+                // enable master interrupt switch without delay
+                change_master_interrupt_switch = true;
+                master_interrupt_switch = true;
             }
             return 16;
         }
@@ -1284,11 +1328,11 @@ int CPU::emulateInstruction() {     // returns number of cycles needed for the i
             return 4;
         }
         case 0xF3: {    // DI: Disables interrupts
-            // TODO
+            change_master_interrupt_switch = false; // disable interrupts after DI is executed
             return 4;
         }
         case 0xFB: {    // EI: Enable interrupts
-            // TODO
+            change_master_interrupt_switch = true;  // enable interrupts after EI is executed
             return 4;
         }
         case 0x07: {    // RLCA: Rotate A left. Old bit 7 to Carry flag. Resets zero flag
@@ -1855,7 +1899,8 @@ int CPU::emulateInstruction() {     // returns number of cycles needed for the i
                     writeByteToMemory(getHL(), n);
                     return 16;
                 }
-
+                default:
+                    return 0;
             }
         }
         default:

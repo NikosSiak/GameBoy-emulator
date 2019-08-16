@@ -31,6 +31,9 @@ class CPU {
     bool FH = true;  // Half Carry Flag: carry for lower 4bits of the result
     bool FC = true;  // Carry Flag
 
+    bool master_interrupt_switch = false;
+    bool change_master_interrupt_switch = false;
+
     void addInstruction(uint8_t target);
     void subInstruction(uint8_t target);
     void andInstruction(uint8_t target);
@@ -52,6 +55,8 @@ class CPU {
     void setInstruction(uint8_t &target, int bit);
     void resInstruction(uint8_t &target, int bit);
 
+    void serveInterrupts(uint8_t interrupt);
+
 public:
     CPU(Memory &memory);
     uint8_t getF();
@@ -64,8 +69,8 @@ public:
     void setHL(uint16_t value);
     uint8_t readByteFromMemory(uint16_t address);
     void writeByteToMemory(uint16_t address, uint8_t value);
-    void enableInterruptRegister();
     int emulateInstruction(); // returns number of cycles needed for the instruction
+    void checkInterrupts();
 };
 
 

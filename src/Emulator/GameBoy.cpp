@@ -14,6 +14,7 @@ void GameBoy::emulate() {
     int cycles = cpu.emulateInstruction();
     while(cycles != 0) {
         timers.updateTimers(cycles);
+        cpu.checkInterrupts();
         cycles = cpu.emulateInstruction();
     }
 }

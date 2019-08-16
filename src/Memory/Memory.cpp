@@ -351,3 +351,24 @@ void Memory::setDIV(uint8_t value) {
     io_registers[4] = value;
 }
 
+// Interrupt Request Flag(IF) and Interrupt Enable(IE) Register
+// Bit 4: Transition from High to Low of Pin number P10-P13
+// Bit 3: Serial I/O transfer complete
+// Bit 2: Timer Overflow
+// Bit 1: LCDC
+// Bit 0: V-Blank
+uint8_t Memory::getIF() {
+    return io_registers[0xF];
+}
+
+void Memory::setIF(uint8_t value) {
+    io_registers[0xF] = value;
+}
+
+uint8_t Memory::getIE() {
+    return interrupt_register;
+}
+
+void Memory::setIE(uint8_t value) {
+    interrupt_register = value;
+}
