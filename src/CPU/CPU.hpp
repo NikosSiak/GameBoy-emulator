@@ -7,7 +7,8 @@
 
 
 #include <cstdint>
-#include <Memory/Memory.hpp>
+
+class Memory;
 
 class CPU {
 

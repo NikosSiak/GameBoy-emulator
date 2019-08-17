@@ -3,6 +3,7 @@
 //
 
 #include <CPU/CPU.hpp>
+#include <Memory/Memory.hpp>
 
 CPU::CPU(Memory &memory) : m_memory(memory) {}
 
