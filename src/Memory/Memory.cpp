@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <Memory/Memory.hpp>
+#include <util/bitoperations.hpp>
 
 Memory::Memory() {
 
@@ -202,7 +203,7 @@ void Memory::writeByte(uint16_t address, uint8_t value) {
         }
         else if (mbc_type == MBC_TYPE::MBC2) {
             uint8_t upperAddress = address >> 8;
-            if ((upperAddress & 0x01) == 1) {   // the least significant bit of the upper byte of the address must be 1 to select rom bank
+            if (checkBit(upperAddress, 0)) {   // the least significant bit of the upper byte of the address must be 1 to select rom bank
                 romBankNumber = value & 0x0F;
                 if (romBankNumber == 0) {
                     romBankNumber++;
@@ -253,10 +254,11 @@ void Memory::writeByte(uint16_t address, uint8_t value) {
     }
     else if (address < 0x8000) {
         if (mbc_type == MBC_TYPE::MBC1) {
-            if ((value & 0x01) == 0) {
+            if (!checkBit(value, 0)) {
                 romMode = true;
                 ramBankNumber = 0;
-            } else {
+            }
+            else {
                 romMode = false;
             }
         }
@@ -307,7 +309,7 @@ void Memory::writeByte(uint16_t address, uint8_t value) {
 void Memory::enableRam(uint16_t address, uint8_t value) {
     if (mbc_type == MBC_TYPE::MBC2) {
         uint8_t upperAddress = address >> 8;
-        if ((upperAddress & 0x01) == 1) {       // enable/disable only if the least significant bit of the upper byte of the address is 0
+        if (checkBit(upperAddress, 0)) {       // enable/disable only if the least significant bit of the upper byte of the address is 0
             return;
         }
     }

@@ -4,6 +4,7 @@
 
 #include <Timers/Timers.hpp>
 #include <Memory/Memory.hpp>
+#include <util/bitoperations.hpp>
 #include <cstdint>
 
 Timers::Timers(Memory &memory) : m_memory(memory) {}
@@ -29,7 +30,7 @@ void Timers::updateTimers(int cycles) {
                 m_memory.setTIMA(m_memory.getTMA());
                 // set timer overflow interrupt
                 uint8_t interrupt_requests = m_memory.getIF();
-                interrupt_requests |= 4;    // timer overflow interrupt is in bit 2 (counting from 0)
+                interrupt_requests = setBit(interrupt_requests, 2);    // timer overflow interrupt is in bit 2 (counting from 0)
                 m_memory.setIF(interrupt_requests);
             }
             else {
@@ -41,7 +42,7 @@ void Timers::updateTimers(int cycles) {
 
 bool Timers::isClockEnabled() {
     int8_t tac = m_memory.getTAC();
-    if (tac & 0b100) {  // if bit 2 (counting from bit 0) is 1
+    if (checkBit(tac, 2)) {
         return true;
     }
     return false;

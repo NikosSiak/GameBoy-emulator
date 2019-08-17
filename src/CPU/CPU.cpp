@@ -4,31 +4,32 @@
 
 #include <CPU/CPU.hpp>
 #include <Memory/Memory.hpp>
+#include <util/bitoperations.hpp>
 
 CPU::CPU(Memory &memory) : m_memory(memory) {}
 
 uint8_t CPU::getF() {   // Return a unsigned 8 bit int which represents the F register
     uint8_t regF = 0x00;    // F register: FZ FN FH FC 0 0 0 0
     if (FC) {
-        regF += 16;     // 2 ^ 4 (4th bit of register)
+        regF = setBit(regF, 4);
     }
     if (FH) {
-        regF += 32;     // 2 ^ 5 (5th bit of register)
+        regF = setBit(regF, 5);
     }
     if (FN) {
-        regF += 64;     // 2 ^ 6 (6th bit of register)
+        regF = setBit(regF, 6);
     }
     if (FZ) {
-        regF += 128;    // 2 ^ 7 (7th bit of register)
+        regF = setBit(regF, 7);
     }
     return regF;
 }
 
 void CPU::setF(uint8_t value) {
-    FZ = ((value >> 7) & 0x01) == 1;    // If the most significant bit is 1 fz = true else false
-    FN = ((value >> 6) & 0x01) == 1;    // If the second most significant bit is 1 fn = true else false
-    FH = ((value >> 5) & 0x01) == 1;    // If the third most significant bit is 1 fn = true else false
-    FC = ((value >> 4) & 0x01) == 1;    // If the fourth most significant bit is 1 fn = true else false
+    FZ = checkBit(value, 7);
+    FN = checkBit(value, 6);
+    FH = checkBit(value, 5);
+    FC = checkBit(value, 4);
 }
 
 uint16_t CPU::getBC() {
@@ -246,10 +247,7 @@ void CPU::checkInterrupts() {
         uint8_t interrupt_requests = m_memory.getIF();
         uint8_t interrupts_enabled = m_memory.getIE();
         for (int i = 0; i < 5; i++) {
-            uint8_t select_bit = 1 << i;    // get power(2, i) to select its bit for the different interrupts
-            uint8_t requests_selected_bit = interrupt_requests & select_bit;
-            uint8_t enabled_selected_bit = interrupts_enabled & select_bit;
-            if (requests_selected_bit != 0 && enabled_selected_bit != 0) {
+            if (checkBit(interrupt_requests, i) && checkBit(interrupts_enabled, i)){
                 serveInterrupts(i);
             }
         }
@@ -263,7 +261,7 @@ void CPU::serveInterrupts(uint8_t interrupt) {
 
     // reset interrupt request for this interrupt
     uint8_t interrupt_requests = m_memory.getIF();
-    interrupt_requests &= ~(1 << interrupt);    // set the bit that represents this interrupt to 0
+    interrupt_requests = resetBit(interrupt_requests, interrupt);  // set the bit that represents this interrupt to 0
     m_memory.setIF(interrupt_requests);
 
     // push pc to stack
