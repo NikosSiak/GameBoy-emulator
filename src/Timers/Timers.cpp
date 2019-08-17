@@ -17,9 +17,9 @@ void Timers::updateTimers(int cycles) {
     }
 
     if (isClockEnabled()) {
-        m_TimerCounter -= cycles;
+        timerCounter -= cycles;
 
-        if (m_TimerCounter <= 0) {
+        if (timerCounter <= 0) {
             // reset timer counter
             setClockFreq();
 
@@ -48,20 +48,20 @@ bool Timers::isClockEnabled() {
 
 void Timers::setClockFreq() {
     uint8_t freq = m_memory.getTAC() & 0b11;  // bit 1-0 Input Clock Select 00 4096Hz, 01 262144Hz, 10 65536Hz, 11 16384Hz
-    // m_TimerCounter = 4194304 (clock speed of gb) / frequency
+    // timerCounter = 4194304 (clock speed of gb) / frequency
     switch (freq) {
-        case 0: m_TimerCounter = 1024;  break;
-        case 1: m_TimerCounter = 16;    break;
-        case 2: m_TimerCounter = 64;    break;
-        case 3: m_TimerCounter = 256;   break;
+        case 0: timerCounter = 1024;  break;
+        case 1: timerCounter = 16;    break;
+        case 2: timerCounter = 64;    break;
+        case 3: timerCounter = 256;   break;
     }
 }
 
 // DIV register is incremented 16384 times a second
 void Timers::updateDIVRegister(int cycles) {
-    m_DIVRegisterCounter += cycles;
-    if (m_DIVRegisterCounter >= 255) {  // 4194304 (clock speed of gb) / 16384 = 256 so it updates every 256 cpu cycles (0 - 255)
-        m_DIVRegisterCounter = 0;
+    DIVRegisterCounter += cycles;
+    if (DIVRegisterCounter >= 255) {  // 4194304 (clock speed of gb) / 16384 = 256 so it updates every 256 cpu cycles (0 - 255)
+        DIVRegisterCounter = 0;
         m_memory.setDIV(m_memory.getDIV() + 1);
     }
 }

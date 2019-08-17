@@ -10,9 +10,9 @@
 class Timers {
 
     Memory &m_memory;
-    int m_DIVRegisterCounter = 0;
+    int DIVRegisterCounter = 0;
     int frequency_clock_select = 0;
-    int m_TimerCounter = 1024;  // 4194304 (clock speed of gb) / 4096 (default frequency)
+    int timerCounter = 1024;  // 4194304 (clock speed of gb) / 4096 (default frequency)
 
     bool isClockEnabled();
     void setClockFreq();
