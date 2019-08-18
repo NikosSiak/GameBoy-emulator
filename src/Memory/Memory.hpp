@@ -53,6 +53,7 @@ class Memory {
     MBC_TYPE mbc_type;
 
     void enableRam(uint16_t address, uint8_t value);
+    void DMATransfer(uint8_t value);
 
 public:
     Memory();

@@ -293,6 +293,9 @@ void Memory::writeByte(uint16_t address, uint8_t value) {
         if (address == 0xFF04) {    // memory[0xFF04] = Divider Register. Writing any value sets it to 0
             io_registers[4] = 0;
         }
+        else if (address == 0xFF46) {   // memory[0xFF46] = DMA transfer
+            DMATransfer(value);
+        }
         else {
             io_registers[address - 0xFF00] = value;
         }
@@ -314,6 +317,16 @@ void Memory::enableRam(uint16_t address, uint8_t value) {
         }
     }
     ramEnabled = (value & 0x0F) == 0x0A;    // true if the lower nibble is 0xA
+}
+
+void Memory::DMATransfer(uint8_t value) {
+    // The written value specifies the transfer source address divided by 0x100
+    uint16_t address = value * 0x100;
+
+    // Destination address space: FE00-FE9F
+    for (int i = 0; i < 0xA0; i++) {
+        writeByte(0xFE00 + i, readByte(address + i));
+    }
 }
 
 // Timer counter
