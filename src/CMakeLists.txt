@@ -1,6 +1,7 @@
 add_subdirectory(CPU)
 add_subdirectory(Memory)
 add_subdirectory(Emulator)
+add_subdirectory(GPU)
 add_subdirectory(Timers)
 add_subdirectory(util)
 add_subdirectory(main)

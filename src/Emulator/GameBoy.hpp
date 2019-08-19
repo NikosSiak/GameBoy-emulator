@@ -7,12 +7,14 @@
 
 
 #include <CPU/CPU.hpp>
+#include <GPU/GPU.hpp>
 #include <Memory/Memory.hpp>
 #include <Timers/Timers.hpp>
 
 class GameBoy {
 
     CPU cpu;
+    GPU gpu;
     Memory memory;
     Timers timers;
 
