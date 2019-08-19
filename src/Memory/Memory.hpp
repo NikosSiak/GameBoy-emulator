@@ -73,6 +73,22 @@ public:
     void setIF(uint8_t value);
     uint8_t getIE();
     void setIE(uint8_t value);
+    uint8_t getLCDC();
+    void setLCDC(uint8_t value);
+    uint8_t getSTAT();
+    void setSTAT(uint8_t value);
+    uint8_t getLY();
+    void setLY(uint8_t value);
+    uint8_t getLYC();
+    void setLYC(uint8_t value);
+    uint8_t getSCY();
+    void setSCY(uint8_t value);
+    uint8_t getSCX();
+    void setSCX(uint8_t value);
+    uint8_t getWY();
+    void setWY(uint8_t value);
+    uint8_t getWX();
+    void setWX(uint8_t value);
 };
 
 

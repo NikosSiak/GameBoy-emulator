@@ -293,6 +293,9 @@ void Memory::writeByte(uint16_t address, uint8_t value) {
         if (address == 0xFF04) {    // memory[0xFF04] = Divider Register. Writing any value sets it to 0
             io_registers[4] = 0;
         }
+        else if (address == 0xFF44) {   // memory[0xFF44] = LCDC Y-Coordinate. Writing any value sets it to 0
+            io_registers[0x44] = 0;
+        }
         else if (address == 0xFF46) {   // memory[0xFF46] = DMA transfer
             DMATransfer(value);
         }
@@ -386,4 +389,108 @@ uint8_t Memory::getIE() {
 
 void Memory::setIE(uint8_t value) {
     interrupt_register = value;
+}
+
+// LCD Control
+// Bit 7 - LCD Control Operation
+// Bit 6 - Window Tile Map Display Select
+// Bit 5 - Window Display
+// Bit 4 - BG & Window Tile Data Select
+// Bit 3 - BG Tile Map Display Select
+// Bit 2 - OBJ (Sprite) Size
+// Bit 1 - OBJ (Sprite) Display
+// Bit 0 - BG & Window Display
+uint8_t Memory::getLCDC() {
+    return io_registers[0x40];
+}
+
+void Memory::setLCDC(uint8_t value) {
+    io_registers[0x40] = value;
+}
+
+// LCDC Status
+// Bits 6-3 - Interrupt Selection By LCDC Status
+// Bit 6 - LYC=LY Coincidence (Selectable)
+// Bit 5 - Mode 10
+// Bit 4 - Mode 01
+// Bit 3 - Mode 00
+// Bit 2 - Coincidence Flag
+// Bit 1-0 - Mode Flag
+// 00: During H-Blank
+// 01: During V-Blank
+// 10: During Searching OAM-RAM
+// 11: During Transferring Data to LCD Driver
+uint8_t Memory::getSTAT() {
+    return io_registers[0x41];
+}
+
+void Memory::setSTAT(uint8_t value) {
+    io_registers[0x41] = value;
+}
+
+// LCDC Y-Coordinate
+// The LY indicates the vertical line to which
+// the present data is transferred to the LCD
+// Driver. The LY can take on any value
+// between 0 through 153. The values between
+// 144 and 153 indicate the V-Blank period
+uint8_t Memory::getLY() {
+    return io_registers[0x44];
+}
+
+void Memory::setLY(uint8_t value) {
+    io_registers[0x44] = value;
+}
+
+// LY Compare
+// The LYC compares itself with the LY. If the
+// values are the same it causes the STAT to
+// set the coincident flag
+uint8_t Memory::getLYC() {
+    return io_registers[0x45];
+}
+
+void Memory::setLYC(uint8_t value) {
+    io_registers[0x45] = value;
+}
+
+// Scroll Y. The Y Position of the background
+uint8_t Memory::getSCY() {
+    return io_registers[0x42];
+}
+
+void Memory::setSCY(uint8_t value) {
+    io_registers[0x42] = value;
+}
+
+// Scroll X. The X Position of the background
+uint8_t Memory::getSCX() {
+    return io_registers[0x43];
+}
+
+void Memory::setSCX(uint8_t value) {
+    io_registers[0x43] = value;
+}
+
+// Window Y Position. The Y Position of the viewing area
+uint8_t Memory::getWY() {
+    return io_registers[0x4A];
+}
+
+void Memory::setWY(uint8_t value) {
+    io_registers[0x4A] = value;
+}
+
+// Window X Position. The X Positions -7 of the viewing area
+// WX is offset from absolute screen
+// coordinates by 7. Setting the window to
+// WX=7, WY=0 will put the upper left corner
+// of the window at absolute screen
+// coordinates 0,0
+uint8_t Memory::getWX() {
+    return io_registers[0x4B] - 7;
+}
+
+void Memory::setWX(uint8_t value) {
+    io_registers[0x4B] = value;
 }
