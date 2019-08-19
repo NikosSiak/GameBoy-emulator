@@ -19,4 +19,8 @@ inline bool checkBit(uint8_t byte, uint8_t bit) {
     return ((byte >> bit) & 1) == 1;
 }
 
+inline uint8_t getBit(uint8_t byte, uint8_t bit) {
+    return (byte >> bit) & 1;
+}
+
 #endif //GAMEBOY_EMULATOR_BITOPERATIONS_HPP
