@@ -310,7 +310,9 @@ void Memory::writeByte(uint16_t address, uint8_t value) {
     else if (address == 0xFFFF) {
         interrupt_register = value;
     }
-    throw std::runtime_error("Tried to write to invalid memory address");
+    else {
+        throw std::runtime_error("Tried to write to invalid memory address");
+    }
 }
 
 void Memory::enableRam(uint16_t address, uint8_t value) {
