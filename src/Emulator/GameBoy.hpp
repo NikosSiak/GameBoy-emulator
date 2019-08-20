@@ -10,6 +10,7 @@
 #include <GPU/GPU.hpp>
 #include <Memory/Memory.hpp>
 #include <Timers/Timers.hpp>
+#include <Joypad/Joypad.hpp>
 
 class GameBoy {
 
@@ -17,6 +18,7 @@ class GameBoy {
     GPU gpu;
     Memory memory;
     Timers timers;
+    Joypad joypad;
 
 public:
     GameBoy();

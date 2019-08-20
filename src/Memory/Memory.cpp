@@ -496,6 +496,35 @@ void Memory::setWX(uint8_t value) {
 }
 
 void Memory::RequestInterrupt(uint8_t interruptID) {
+// Bit 7 - Not used
+// Bit 6 - Not used
+// Bit 5 - P15 Select Button Keys (0=Select)
+// Bit 4 - P14 Select Direction Keys (0=Select)
+// Bit 3 - P13 Input Down or Start (0=Pressed) (Read Only)
+// Bit 2 - P12 Input Up or Select (0=Pressed) (Read Only)
+// Bit 1 - P11 Input Left or Button B (0=Pressed) (Read Only)
+// Bit 0 - P10 Input Right or Button A (0=Pressed) (Read Only)
+uint8_t Memory::getJoypadState() {
+    return io_registers[0];
+}
+
+void Memory::setJoypadState(uint8_t keys_pressed) {
+    // if button keys are selected or if direction keys are selected
+    if (!checkBit(io_registers[0], 5)) {
+        uint8_t topNibble = io_registers[0] & 0xF0;
+        // button keys are in the upper nibble
+        io_registers[0] = keys_pressed >> 4;
+        io_registers[0] |= topNibble;
+    }
+    else if (!checkBit(io_registers[0], 4)) {
+        uint8_t topNibble = io_registers[0] & 0xF0;
+        // direction keys are in the lower nibble
+        io_registers[0] = keys_pressed & 0x0F;
+        io_registers[0] |= topNibble;
+    }
+
+}
+
     uint8_t interrupt_requests = getIF();
     interrupt_requests = setBit(interrupt_requests, interruptID);
     setIF(interrupt_requests);
