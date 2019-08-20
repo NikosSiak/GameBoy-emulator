@@ -223,8 +223,86 @@ void GPU::drawBackground() {
 
 }
 
+// Each sprite has 4 bytes of attributes associated to it in the oam, these are
+// 0: Sprite Y Position: Position of the sprite on the Y axis of the viewing display minus 16
+// 1: Sprite X Position: Position of the sprite on the X axis of the viewing display minus 8
+// 2: Pattern number: This is the sprite identifier used for looking up the sprite data in memory region 0x8000-0x8FFF
+// 3: Attributes: These are the attributes of the sprite, discussed later.
 void GPU::drawSprites() {
 
+    bool sprite8x16 = false;
+
+    uint8_t lcdc = m_memory.getLCDC();
+    // if bit 2 is 1 sprite size is 8x16
+    if (checkBit(lcdc, 2)) {
+        sprite8x16 = true;
+    }
+
+    for (int sprite = 0 ; sprite < 40; sprite++) {
+        // sprite takes 4 bytes in the sprite attributes table (OAM) address space: 0xFE00-0xFE9F
+        uint8_t index = sprite * 4;
+        uint8_t posY = m_memory.readByte(0xFE00 + index) - 16;
+        uint8_t posX = m_memory.readByte(0xFE00 + index + 1) - 8;
+        uint8_t tileLocation = m_memory.readByte(0xFE00 + index + 2);
+        // attributes
+        // Bit7: Sprite to Background Priority
+        // Bit6: Y flip
+        // Bit5: X flip
+        // Bit4: Palette number
+        // Bit3: Not used in standard gameboy
+        // Bit2-0: Not used in standard gameboy
+        uint8_t attributes = m_memory.readByte(0xFE00 + index + 3);
+
+        bool flipY = checkBit(attributes, 6);
+        bool flipX = checkBit(attributes, 5);
+
+        uint8_t scanLine = m_memory.getLY();
+
+        uint8_t sizeY = 8;
+        if (sprite8x16) {
+            sizeY = 16;
+        }
+
+        if ((scanLine >= posY) && (scanLine < (posY + sizeY))) {
+            int line = scanLine - posY;
+            // read the sprite in backwards in the y axis
+            if (flipY) {
+                line -= sizeY ;
+                line *= -1 ;
+            }
+
+            line *= 2;
+            uint16_t dataAddress = (0x8000 + (tileLocation * 16)) + line;
+            uint8_t data1 = m_memory.readByte(dataAddress);
+            uint8_t data2 = m_memory.readByte(dataAddress + 1);
+
+            for (int tilePixel = 7; tilePixel >= 0; tilePixel--) {
+                int colourBit = tilePixel;
+                if (flipX) {
+                    colourBit -= 7;
+                    colourBit *= -1;
+                }
+
+                int colourNum = getBit(data2,colourBit);
+                colourNum <<= 1;
+                colourNum |= getBit(data1,colourBit);
+
+
+                uint16_t colourAddress = checkBit(attributes, 4) ? 0xFF49 : 0xFF48;
+                Colour colour = getColour(colourNum, colourAddress);
+
+                // white is transparent for sprites
+                if (colour != Colour::White) {
+                    int pixX = -tilePixel;
+                    pixX += 7;
+                    int pixel = posX + pixX ;
+                    if (scanLine >= 0 && scanLine <= 143 && pixel >= 0 && pixel <= 159) {
+                        pixels[pixel][scanLine] = colour;
+                    }
+                }
+            }
+        }
+    }
 }
 
 Colour GPU::getColour(uint8_t colourNum, uint16_t address) {
