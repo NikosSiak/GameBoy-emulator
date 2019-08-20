@@ -2,6 +2,8 @@
 // Created by nikos on 12-Aug-19.
 //
 
+// Proudly copied from http://www.codeslinger.co.uk/pages/projects/gameboy/graphics.html
+
 #include <GPU/GPU.hpp>
 #include <Memory/Memory.hpp>
 #include <util/bitoperations.hpp>
@@ -25,7 +27,7 @@ void GPU::updateGraphics(int cycles) {
             }
             else if (current_line == 144) {
                 // request v-blank interrupt
-                m_memory.RequestInterrupt(0);
+                m_memory.requestInterrupt(0);
             }
             else if (current_line > 153) {
                 m_memory.setLY(0);
@@ -94,7 +96,7 @@ void GPU::setLCDStatus() {
         if (reqInterrupt && (mode != current_mode)) {
             // request lcdc interrupt
             // lcdc interrupt is in bit 1 (counting from 0)
-            m_memory.RequestInterrupt(1);
+            m_memory.requestInterrupt(1);
         }
 
         // set/reset Coincidence Flag (bit 2 of STAT)
@@ -105,7 +107,7 @@ void GPU::setLCDStatus() {
             if (checkBit(status, 6)) {
                 // request lcdc interrupt
                 // lcdc interrupt is in bit 1 (counting from 0)
-                m_memory.RequestInterrupt(1);
+                m_memory.requestInterrupt(1);
             }
         }
         else {

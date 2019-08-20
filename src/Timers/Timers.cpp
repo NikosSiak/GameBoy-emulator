@@ -30,7 +30,7 @@ void Timers::updateTimers(int cycles) {
                 m_memory.setTIMA(m_memory.getTMA());
                 // set timer overflow interrupt
                 // timer overflow interrupt is in bit 2 (counting from 0)
-                m_memory.RequestInterrupt(2);
+                m_memory.requestInterrupt(2);
             }
             else {
                 m_memory.setTIMA(m_memory.getTIMA() + 1);

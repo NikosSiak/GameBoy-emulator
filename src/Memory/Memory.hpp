@@ -89,9 +89,9 @@ public:
     void setWY(uint8_t value);
     uint8_t getWX();
     void setWX(uint8_t value);
-    void RequestInterrupt(uint8_t interruptID);
     uint8_t getJoypadState();
     void setJoypadState(uint8_t keys_pressed);
+    void requestInterrupt(uint8_t interruptID);
 };
 
 

@@ -8,7 +8,7 @@
 
 Memory::Memory() {
 
-    hasBootedUp = false;
+    hasBootedUp = true; // TODO: change it to false and find a way to set it to true when it has booted up
     romBankNumber = 1;
     ramBankNumber = 0;
     ramEnabled = false;
@@ -40,6 +40,7 @@ Memory::Memory() {
     }
 
     // Power Up Sequence http://bgb.bircd.org/pandocs.htm#powerupsequence
+    io_registers[0x00] = 0xCF;
     io_registers[0x05] = 0x00;
     io_registers[0x06] = 0x00;
     io_registers[0x07] = 0x00;
@@ -495,7 +496,6 @@ void Memory::setWX(uint8_t value) {
     io_registers[0x4B] = value;
 }
 
-void Memory::RequestInterrupt(uint8_t interruptID) {
 // Bit 7 - Not used
 // Bit 6 - Not used
 // Bit 5 - P15 Select Button Keys (0=Select)
@@ -525,6 +525,7 @@ void Memory::setJoypadState(uint8_t keys_pressed) {
 
 }
 
+void Memory::requestInterrupt(uint8_t interruptID) {
     uint8_t interrupt_requests = getIF();
     interrupt_requests = setBit(interrupt_requests, interruptID);
     setIF(interrupt_requests);
