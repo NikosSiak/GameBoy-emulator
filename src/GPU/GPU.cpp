@@ -25,9 +25,7 @@ void GPU::updateGraphics(int cycles) {
             }
             else if (current_line == 144) {
                 // request v-blank interrupt
-                uint8_t interrupt_requests = m_memory.getIF();
-                interrupt_requests = setBit(interrupt_requests, 0);
-                m_memory.setIF(interrupt_requests);
+                m_memory.RequestInterrupt(0);
             }
             else if (current_line > 153) {
                 m_memory.setLY(0);
@@ -95,10 +93,8 @@ void GPU::setLCDStatus() {
 
         if (reqInterrupt && (mode != current_mode)) {
             // request lcdc interrupt
-            uint8_t interrupt_requests = m_memory.getIF();
             // lcdc interrupt is in bit 1 (counting from 0)
-            interrupt_requests = setBit(interrupt_requests, 1);
-            m_memory.setIF(interrupt_requests);
+            m_memory.RequestInterrupt(1);
         }
 
         // set/reset Coincidence Flag (bit 2 of STAT)
@@ -108,10 +104,8 @@ void GPU::setLCDStatus() {
             status = setBit(status, 2);
             if (checkBit(status, 6)) {
                 // request lcdc interrupt
-                uint8_t interrupt_requests = m_memory.getIF();
                 // lcdc interrupt is in bit 1 (counting from 0)
-                interrupt_requests = setBit(interrupt_requests, 1);
-                m_memory.setIF(interrupt_requests);
+                m_memory.RequestInterrupt(1);
             }
         }
         else {

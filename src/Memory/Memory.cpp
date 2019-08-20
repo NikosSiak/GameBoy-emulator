@@ -494,3 +494,9 @@ uint8_t Memory::getWX() {
 void Memory::setWX(uint8_t value) {
     io_registers[0x4B] = value;
 }
+
+void Memory::RequestInterrupt(uint8_t interruptID) {
+    uint8_t interrupt_requests = getIF();
+    interrupt_requests = setBit(interrupt_requests, interruptID);
+    setIF(interrupt_requests);
+}

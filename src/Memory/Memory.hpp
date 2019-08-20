@@ -89,6 +89,7 @@ public:
     void setWY(uint8_t value);
     uint8_t getWX();
     void setWX(uint8_t value);
+    void RequestInterrupt(uint8_t interruptID);
 };
 
 
