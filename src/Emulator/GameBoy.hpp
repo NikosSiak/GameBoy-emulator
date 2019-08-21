@@ -24,6 +24,8 @@ public:
     GameBoy();
     void loadGame(const char *romPath);
     void emulate();
+    GPU &getGPU();
+    Joypad &getJoypad();
 };
 
 

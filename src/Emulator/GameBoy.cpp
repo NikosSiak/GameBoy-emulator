@@ -25,3 +25,11 @@ void GameBoy::emulate() {
         cpu.checkInterrupts();
     }
 }
+
+GPU& GameBoy::getGPU() {
+    return gpu;
+}
+
+Joypad& GameBoy::getJoypad() {
+    return joypad;
+}
