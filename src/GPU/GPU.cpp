@@ -326,3 +326,7 @@ Colour GPU::getColour(uint8_t colourNum, uint16_t address) {
 
     return colour;
 }
+
+Colour GPU::getPixelColour(int i, int j) {
+    return pixels[i][j];
+}

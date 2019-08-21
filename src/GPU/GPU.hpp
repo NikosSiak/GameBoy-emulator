@@ -33,6 +33,7 @@ class GPU {
 public:
     GPU(Memory &memory);
     void updateGraphics(int cycles);
+    Colour getPixelColour(int i, int j);
 };
 
 
