@@ -8,6 +8,8 @@ constexpr char const* WINDOW_TITLE = "GameBoy Emulator";
 const int WINDOW_WIDTH = 160;
 const int WINDOW_HEIGHT = 144;
 const int RES_MULT = 4;
+const int FPS = 60;
+const int TICKS_PER_FRAME = 1000 / FPS;
 
 SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
@@ -46,7 +48,12 @@ int main(int argc, char *argv[]) {
     bool closeWindow = false;
     SDL_Event e;
 
+    Uint32 starting_tick;
+
     while (!closeWindow) {
+
+        starting_tick = SDL_GetTicks();
+
         while (SDL_PollEvent(&e) != 0) {
             switch (e.type) {
                 case SDL_QUIT:
@@ -64,6 +71,10 @@ int main(int argc, char *argv[]) {
         }
         emulator.emulate();
         draw(gpu);
+
+        if (TICKS_PER_FRAME > SDL_GetTicks() - starting_tick) {
+            SDL_Delay(TICKS_PER_FRAME - (SDL_GetTicks() - starting_tick));
+        }
     }
 
     SDL_DestroyRenderer(renderer);
@@ -92,7 +103,7 @@ bool windowInit() {
         return false;
     }
 
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (renderer == nullptr) {
         std::cerr << "Failed to create renderer" << std::endl;
         return false;
