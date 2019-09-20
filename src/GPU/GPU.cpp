@@ -9,84 +9,27 @@
 GPU::GPU(Memory &memory) : m_memory(memory){}
 
 void GPU::updateGraphics(int cycles) {
-    scanLineCounter += cycles;
+    setLCDStatus();
 
-    uint8_t status = m_memory.getSTAT();
+    if (isLCDEnabled()) {
+        scanLineCounter -= cycles;
 
-    switch (current_mode) {
-        case  VideoMode::ACCESS_OAM: {
-            if (scanLineCounter >= CLOCKS_PER_SCANLINE_OAM) {
-                scanLineCounter %= CLOCKS_PER_SCANLINE_OAM;
-                status = setBit(status, 1);
-                status = setBit(status, 0);
-                m_memory.setSTAT(status);
-                current_mode = VideoMode::ACCESS_VRAM;
-            }
-            break;
-        }
-        case VideoMode::ACCESS_VRAM: {
-            if (scanLineCounter >= CLOCKS_PER_SCANLINE_VRAM) {
-                scanLineCounter %= CLOCKS_PER_SCANLINE_VRAM;
-                current_mode = VideoMode::HBLANK;
+        if (scanLineCounter <= 0) {
+            scanLineCounter = 456;
 
-                if (checkBit(status, 3)) {
-                    m_memory.requestInterrupt(1);
-                }
+            m_memory.setLY(m_memory.getLY() + 1);
+            uint8_t current_line = m_memory.getLY();
 
-                bool ly_coincidence_interrupt = checkBit(status, 6);
-                bool ly_coincedence = m_memory.getLYC() == m_memory.getLY();
-                if (ly_coincidence_interrupt && ly_coincedence) {
-                    m_memory.requestInterrupt(1);
-                    status = setBit(status, 2);
-                }
-                else {
-                    status = resetBit(status, 2);
-                }
-                status = resetBit(status, 1);
-                status = resetBit(status, 0);
-                m_memory.setSTAT(status);
-            }
-            break;
-        }
-        case VideoMode::HBLANK: {
-            if (scanLineCounter >= CLOCKS_PER_HBLANK) {
+            if (current_line < 144) {
                 drawScanLine();
-                m_memory.setLY(m_memory.getLY() + 1);
-
-                scanLineCounter %= CLOCKS_PER_HBLANK;
-
-                if (m_memory.getLY() == 144) {
-                    current_mode = VideoMode::VBLANK;
-                    status = resetBit(status, 1);
-                    status = setBit(status, 0);
-                    m_memory.requestInterrupt(0);
-                }
-                else {
-                    status = setBit(status, 1);
-                    status = resetBit(status, 0);
-                    current_mode =  VideoMode::ACCESS_OAM;
-                }
-                m_memory.setSTAT(status);
             }
-            break;
-        }
-        case VideoMode::VBLANK: {
-            if (scanLineCounter >= CLOCKS_PER_SCANLINE) {
-                m_memory.setLY(m_memory.getLY() + 1);
-
-                scanLineCounter %= CLOCKS_PER_SCANLINE;
-
-                if (m_memory.getLY() == 154) {
-                    drawSprites();
-                    //draw();
-                    // reset ola ta pixels aspra
-                    current_mode = VideoMode::ACCESS_OAM;
-                    status = setBit(status, 1);
-                    status = resetBit(status, 0);
-                    m_memory.setSTAT(status);
-                }
+            else if (current_line == 144) {
+                // request v-blank interrupt
+                m_memory.requestInterrupt(0);
             }
-            break;
+            else if (current_line > 153) {
+                m_memory.setLY(0);
+            }
         }
     }
 }
@@ -96,16 +39,88 @@ bool GPU::isLCDEnabled() {
     return checkBit(lcdc, 7);
 }
 
+void GPU::setLCDStatus() {
+    uint8_t status = m_memory.getSTAT();
+    if (!isLCDEnabled()) {
+        scanLineCounter = 456;
+        m_memory.setLY(0);
+        // change stat register to mode 1. bits 1-0: 01
+        status = resetBit(status, 1);
+        status = setBit(status, 0);
+    }
+    else {
+        uint8_t current_line = m_memory.getLY();
+        uint8_t current_mode = status & 0x3;    // mode is encoded in the 2 least bits of stat register
+        uint8_t mode;
+        bool reqInterrupt = false;
+
+        // v-blank. when in v-blank set mode to 1
+        if (current_line >= 144) {
+            mode = 1;
+            // change stat register to mode 1. bits 1-0: 01
+            status = resetBit(status, 1);
+            status = setBit(status, 0);
+            // if bit 4 is 1 request an interrupt. bit 4 is 1 if interrupts for mode 1 are enabled
+            reqInterrupt = checkBit(status, 4);
+        }
+        else {
+            int mode2bounds = 456 - 80;     // first 80 cycles
+            int mode3bounds = mode2bounds - 172;
+
+            if (scanLineCounter >= mode2bounds) {
+                mode = 2;
+                // change stat register to mode 2. bits 1-0: 10
+                status = setBit(status, 1);
+                status = resetBit(status, 0);
+                // if bit 5 is 1 request an interrupt. bit 5 is 1 if interrupts for mode 2 are enabled
+                reqInterrupt = checkBit(status, 5);
+            }
+            else if (scanLineCounter >= mode3bounds) {
+                mode = 3;
+                // change stat register to mode 3. bits 1-0: 11
+                status = setBit(status, 1);
+                status = setBit(status, 0);
+            }
+            else {
+                mode = 0;
+                // change stat register to mode 0. bits 1-0: 00
+                status = resetBit(status, 1);
+                status = resetBit(status, 0);
+                // if bit 3 is 1 request an interrupt. bit 3 is 1 if interrupts for mode 0 are enabled
+                reqInterrupt = checkBit(status, 3);
+            }
+        }
+
+        if (reqInterrupt && (mode != current_mode)) {
+            // request lcdc interrupt
+            // lcdc interrupt is in bit 1 (counting from 0)
+            m_memory.requestInterrupt(1);
+        }
+
+        // set/reset Coincidence Flag (bit 2 of STAT)
+        // 1: LYC = LCDC LY
+        // 0: LYC not equal to LCDC LY
+        if (m_memory.getLY() == m_memory.getLYC()) {
+            status = setBit(status, 2);
+            if (checkBit(status, 6)) {
+                // request lcdc interrupt
+                // lcdc interrupt is in bit 1 (counting from 0)
+                m_memory.requestInterrupt(1);
+            }
+        }
+        else {
+            status = resetBit(status, 2);
+        }
+    }
+    m_memory.setSTAT(status);
+}
 
 void GPU::drawScanLine() {
-    if (!isLCDEnabled())
-        return;
-
     uint8_t lcdc = m_memory.getLCDC();
     if (checkBit(lcdc, 0)) {
         drawBackground();
     }
-    if (checkBit(lcdc, 1)) {
+    if (checkBit(lcdc, 5)) {
         drawSprites();
     }
 }
