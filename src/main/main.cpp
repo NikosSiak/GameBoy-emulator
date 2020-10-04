@@ -1,7 +1,8 @@
 #include <iostream>
 #include <Emulator/GameBoy.hpp>
-#include <Joypad/Joypad.hpp>
-#include <GPU/GPU.hpp>
+//#include <Joypad/Joypad.hpp>
+//#include <GPU/GPU.hpp>
+#include <GPU/Colour.hpp>
 #include <SDL2/SDL.h>
 
 constexpr char const* WINDOW_TITLE = "GameBoy Emulator";
