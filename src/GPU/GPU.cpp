@@ -4,7 +4,7 @@
 
 #include <GPU/GPU.hpp>
 #include <Memory/Memory.hpp>
-#include <util/bitoperations.hpp>
+#include <utils/bitoperations.hpp>
 
 GPU::GPU(Memory &memory) : m_memory(memory){}
 

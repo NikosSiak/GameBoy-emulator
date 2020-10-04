@@ -4,7 +4,7 @@
 
 #include <CPU/CPU.hpp>
 #include <Memory/Memory.hpp>
-#include <util/bitoperations.hpp>
+#include <utils/bitoperations.hpp>
 
 CPU::CPU(Memory &memory) : m_memory(memory) {}
 

@@ -4,7 +4,7 @@
 
 #include <Joypad/Joypad.hpp>
 #include <Memory/Memory.hpp>
-#include <util/bitoperations.hpp>
+#include <utils/bitoperations.hpp>
 
 Joypad::Joypad(Memory &memory) : m_memory(memory) {}
 
