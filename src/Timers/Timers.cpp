@@ -4,7 +4,7 @@
 
 #include <Timers/Timers.hpp>
 #include <Memory/Memory.hpp>
-#include <util/bitoperations.hpp>
+#include <utils/bitoperations.hpp>
 #include <cstdint>
 
 Timers::Timers(Memory &memory) : m_memory(memory) {}

@@ -4,7 +4,7 @@
 
 #include <fstream>
 #include <Memory/Memory.hpp>
-#include <util/bitoperations.hpp>
+#include <utils/bitoperations.hpp>
 
 Memory::Memory() {
 
