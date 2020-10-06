@@ -14,6 +14,7 @@ const int TICKS_PER_FRAME = 1000 / FPS;
 
 SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
+SDL_Texture  *screenTexture = nullptr;
 
 SDL_Color darkest_blue  = {0, 26, 77, 255};
 SDL_Color dark_blue     = {0, 51, 153, 255};
@@ -24,6 +25,7 @@ bool windowInit();
 void keyDown(SDL_Keycode key, Joypad &joypad);
 void keyUp(SDL_Keycode key, Joypad &joypad);
 void draw(GPU &gpu);
+uint32_t getRealColour(Colour colour);
 void setRenderColor(SDL_Color color);
 
 int main(int argc, char *argv[]) {
@@ -97,7 +99,7 @@ bool windowInit() {
             SDL_WINDOWPOS_CENTERED,
             WINDOW_WIDTH * RES_MULT,
             WINDOW_HEIGHT * RES_MULT,
-            0);
+            SDL_WINDOW_OPENGL);
 
     if (window == nullptr) {
         std::cerr << "Failed to create window" << std::endl;
@@ -109,6 +111,12 @@ bool windowInit() {
         std::cerr << "Failed to create renderer" << std::endl;
         return false;
     }
+
+    screenTexture = SDL_CreateTexture(renderer,
+                SDL_PIXELFORMAT_ARGB8888,
+                SDL_TEXTUREACCESS_STREAMING,
+                WINDOW_WIDTH * RES_MULT,
+                WINDOW_HEIGHT * RES_MULT);
 
     return true;
 }
@@ -140,29 +148,54 @@ void keyUp(SDL_Keycode key, Joypad &joypad) {
 }
 
 void draw(GPU &gpu) {
-    SDL_Rect pixel;
-
-    pixel.w = RES_MULT;
-    pixel.h = RES_MULT;
+//    SDL_Rect pixel;
+//
+//    pixel.w = RES_MULT;
+//    pixel.h = RES_MULT;
 
     setRenderColor(darkest_blue);
     SDL_RenderClear(renderer);
 
-    for (int i = 0; i < WINDOW_WIDTH; i++) {
-        for (int j = 0; j < WINDOW_HEIGHT; j++) {
-            pixel.x = i * RES_MULT;
-            pixel.y = j * RES_MULT;
+    void *pixelsPtr;
+    int pitch;
+
+    SDL_LockTexture(screenTexture, nullptr, &pixelsPtr, &pitch);
+
+    auto *pixels = static_cast<uint32_t*>(pixelsPtr);
+
+    for (int j = 0; j < WINDOW_HEIGHT; j++) {
+        for (int i = 0; i < WINDOW_WIDTH; i++) {
+//            pixel.x = i * RES_MULT;
+//            pixel.y = j * RES_MULT;
             Colour pixelColour = gpu.getPixelColour(i, j);
-            switch (pixelColour) {
-                case Colour::White:         setRenderColor(lightest_blue);  break;
-                case Colour::Light_Grey:    setRenderColor(light_blue);     break;
-                case Colour::Dark_Grey:     setRenderColor(dark_blue);      break;
-                case Colour::Black:         setRenderColor(darkest_blue);   break;
+            uint32_t pixelARGB = getRealColour(pixelColour);
+
+            for (uint8_t w = 0; w < RES_MULT; w++) {
+                for (uint8_t h = 0; h < RES_MULT; h++) {
+                    pixels[(GAMEBOY_WIDTH * RES_MULT) * (j * RES_MULT + h) + (i * RES_MULT + w)] = pixelARGB;
+                }
             }
-            SDL_RenderFillRect(renderer, &pixel);
         }
     }
+
+    SDL_UnlockTexture(screenTexture);
+    SDL_RenderCopy(renderer, screenTexture, nullptr, nullptr);
     SDL_RenderPresent(renderer);
+}
+
+uint32_t getRealColour(Colour colour) {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+
+    switch (colour) {
+        case Colour::White: r = g = b = 255; break;
+        case Colour::Light_Grey: r = g = b = 170; break;
+        case Colour::Dark_Grey: r = g = b = 85; break;
+        case Colour::Black: r = g = b = 0; break;
+    }
+
+    return (r << 16) | (g << 8) | (b << 0);
 }
 
 void setRenderColor(SDL_Color color) {
